@@ -5,6 +5,8 @@ import goblinBust from '../../assets/grix-bust.png';
 import miraBust from '../../assets/mira-bust.png';
 import finPortrait from '../../assets/fin-stand.png';
 import finBust from '../../assets/fin-bust.png';
+import gateMerchantPortrait from '../../assets/gate-merchant-cart.png';
+import gateMerchantBust from '../../assets/gate-merchant-bust.png';
 
 /**
  * 주요 NPC 등록부 — 관계 화면과 향후 지역 간 재등장 시스템의 기반.
@@ -27,6 +29,17 @@ export interface NpcDef {
 }
 
 export const NPCS: NpcDef[] = [
+  {
+    id: 'gate_merchant',
+    name: '입구의 상인',
+    regionId: 'goblin_market',
+    role: '시장 입구의 수레 상인',
+    desc: '시장 문 앞에서 냄비와 잡동사니를 파는 고블린. 시장 안보다 싸다는 게 자랑이다.',
+    portrait: gateMerchantPortrait,
+    bust: gateMerchantBust,
+    reappears: true,
+    questIds: ['q_prologue'],
+  },
   {
     id: 'goblin',
     name: '그리즐',
@@ -79,6 +92,17 @@ export function getNpcRelation(def: NpcDef, state: GameState): NpcRelationView {
   const records: string[] = [];
   let relation = met ? '아는 사이' : '미발견';
 
+  if (def.id === 'gate_merchant' && rt) {
+    if (state.flags.gate_merchant_met === true) {
+      relation = '어색함 — 카드 이야기 이후 눈을 피한다';
+      records.push('낡은 스페이드 카드를 보자 "어디서 났어?"라고 묻더니, 곧 "잘못 봤다"며 말을 바꿨다.');
+      if (state.flags.gate_merchant_answer === 'told') records.push('길에서 주웠다고 사실대로 말해 줬다.');
+      if (state.flags.gate_merchant_answer === 'asked') records.push('카드에 대해 되물었지만 대답을 듣지 못했다.');
+      if (state.flags.gate_merchant_answer === 'hid') records.push('대답하지 않고 카드를 숨겼다.');
+    } else {
+      relation = '호객하는 상인';
+    }
+  }
   if (def.id === 'goblin' && rt) {
     if (rt.caughtLying) {
       relation = '경계 대상 — 그리즐이 당신의 눈썰미를 경계한다';

@@ -59,6 +59,129 @@ button.active { border-color: var(--gold); color: var(--gold-bright); }
 
 .dim { color: var(--dim); font-size: 13px; }
 
+/* ── 타이틀 · 계정 ── */
+.title-root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 16px calc(env(safe-area-inset-bottom) + 28px);
+}
+.title-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: title-drift 24s ease-in-out infinite alternate;
+}
+@keyframes title-drift {
+  from { transform: scale(1.02); }
+  to { transform: scale(1.08) translateY(-1%); }
+}
+.title-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, transparent 30%, transparent 45%, rgba(5, 3, 1, 0.92) 78%);
+}
+.title-logo {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 9%);
+  left: 0;
+  right: 0;
+  text-align: center;
+  pointer-events: none;
+}
+.title-logo h1 {
+  margin: 0;
+  font-size: clamp(38px, 12vw, 58px);
+  letter-spacing: 0.06em;
+  color: var(--gold-bright);
+  text-shadow: 0 0 18px rgba(240, 200, 120, 0.55), 0 3px 6px #000;
+  font-weight: 900;
+}
+.title-logo p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: #f2e7d2;
+  letter-spacing: 0.2em;
+  text-shadow: 0 2px 4px #000;
+}
+.title-suit {
+  font-size: 34px;
+  color: var(--gold-bright);
+  text-shadow: 0 0 14px rgba(240, 200, 120, 0.7);
+}
+.title-tap {
+  position: relative;
+  background: none;
+  border: none;
+  color: var(--gold-bright);
+  font-size: 16px;
+  letter-spacing: 0.15em;
+  padding: 18px 30px;
+  text-shadow: 0 2px 4px #000;
+  animation: tap-pulse 1.8s ease-in-out infinite;
+}
+@keyframes tap-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+.title-panel {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: rgba(16, 11, 6, 0.9);
+  border: 1.5px solid var(--gold-dim);
+  border-radius: 16px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  animation: event-in 0.25s ease-out;
+}
+.title-panel h2 { margin: 0; font-size: 18px; color: var(--gold-bright); }
+.title-panel p { margin: 0; font-size: 13px; line-height: 1.55; }
+.title-panel button { padding: 12px; font-size: 15px; }
+.title-input {
+  width: 100%;
+  background: #0a0704;
+  border: 1.5px solid var(--gold-dim);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-size: 16px;
+  font-family: inherit;
+}
+.title-input:focus { outline: none; border-color: var(--gold-bright); }
+.account-list { display: flex; flex-direction: column; gap: 6px; max-height: 38vh; overflow-y: auto; }
+.account-row { display: flex; gap: 6px; }
+.account-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+}
+.account-main b { color: var(--gold-bright); }
+.account-del { width: 44px; flex-shrink: 0; color: var(--dim); }
+.save-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.save-summary b { color: var(--gold-bright); font-size: 15px; }
+
 /* ── 루트 레이아웃: 전체 화면 게임 뷰포트 ── */
 .game-root {
   position: fixed;
@@ -143,6 +266,61 @@ button.active { border-color: var(--gold); color: var(--gold-bright); }
   white-space: nowrap;
   pointer-events: none;
   text-shadow: 0 1px 2px #000;
+}
+.scene-glow {
+  position: absolute;
+  aspect-ratio: 1;
+  transform: translate(-50%, -60%);
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 244, 200, 0.95) 0%, rgba(255, 214, 120, 0.55) 25%, transparent 70%);
+  animation: glint 1.4s ease-in-out infinite;
+}
+@keyframes glint {
+  0%, 100% { opacity: 0.45; transform: translate(-50%, -60%) scale(0.85); }
+  50% { opacity: 1; transform: translate(-50%, -60%) scale(1.15); }
+}
+.scene-bark {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  width: max-content;
+  max-width: 180px;
+  background: rgba(247, 238, 218, 0.94);
+  color: #2a1d0c;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 1.35;
+  padding: 5px 9px;
+  border-radius: 10px;
+  border: 1.5px solid #b9945a;
+  pointer-events: none;
+  text-align: center;
+  animation: bark-in 0.4s ease-out, bark-float 2.4s ease-in-out 0.4s infinite alternate;
+}
+@keyframes bark-in {
+  from { opacity: 0; transform: translate(-50%, -80%); }
+  to { opacity: 1; transform: translate(-50%, -100%); }
+}
+@keyframes bark-float {
+  from { margin-top: 0; }
+  to { margin-top: -0.4%; }
+}
+.tutorial-hint {
+  position: absolute;
+  left: 50%;
+  top: calc(env(safe-area-inset-top) + 20%);
+  transform: translateX(-50%);
+  z-index: 2150;
+  max-width: 86%;
+  background: rgba(14, 9, 5, 0.85);
+  border: 1px solid var(--gold);
+  color: var(--gold-bright);
+  font-size: 12px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  text-align: center;
+  pointer-events: none;
+  animation: bark-in 0.4s ease-out;
 }
 .interact-marker {
   position: absolute;
@@ -589,6 +767,15 @@ button.active { border-color: var(--gold); color: var(--gold-bright); }
 .event-text { margin: 0 0 14px; font-size: 14px; line-height: 1.7; white-space: pre-line; }
 .event-footnote { margin: 0 0 16px; font-size: 12px; color: var(--gold); }
 .event-card button { width: 100%; padding: 12px; font-size: 15px; }
+
+.back-to-explore {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 16px);
+  transform: translateX(-50%);
+  z-index: 4000;
+  padding: 12px 28px;
+}
 
 /* ── 전역 내비게이션 ── */
 .global-nav {

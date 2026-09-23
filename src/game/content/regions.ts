@@ -62,7 +62,7 @@ export const CHAMPIONS: Record<string, ChampionDef> = {
   champ_goblin: {
     id: 'champ_goblin',
     regionId: 'goblin_market',
-    tentativeName: '시장의 왕 (임시 명칭)',
+    tentativeName: '왕고블린 (임시 명칭)',
     theme: '거짓과 진실이 뒤섞인 최후의 흥정',
     badgeName: '거래의 배지 (가칭)',
     status: 'coming_soon',
@@ -109,7 +109,7 @@ export const REGIONS: RegionDef[] = [
       { name: '시장 탐험', desc: '골목을 걸으며 NPC·장소와 상호작용한다.', status: 'playable' },
       { name: '그리즐의 상자 대결', desc: '고블린의 주장을 읽어내는 심리전.', status: 'playable' },
       { name: '오래된 창고', desc: '낡은 열쇠로 열리는 잠긴 장소.', status: 'playable' },
-      { name: '시장 챔피언전', desc: '시장의 왕과의 최후의 흥정.', status: 'coming_soon' },
+      { name: '시장 챔피언전', desc: '왕고블린과의 최후의 흥정.', status: 'coming_soon' },
       { name: '고블린 포커 클럽', desc: '시장 뒷골목의 소규모 클럽.', status: 'coming_soon' },
     ],
     questIds: ['q_invitation', 'q_black_chip', 'q_mira_past'],
@@ -195,6 +195,7 @@ export function getRegionById(id: string): RegionDef | undefined {
 
 /** 탐험 지역(locationId) → 소속 월드 지역(regionId) */
 export const LOCATION_REGION: Record<string, string> = {
+  market_road: 'goblin_market',
   market: 'goblin_market',
   warehouse: 'goblin_market',
   port_docks: 'trickster_port',

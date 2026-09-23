@@ -6,6 +6,22 @@ export interface DialogueTree {
 }
 
 /**
+ * 대화 진행 중 표시할 노드를 결정한다.
+ * 선택지의 효과가 분기 조건(플래그·만남 횟수)을 바꾸면 새로 계산한 트리에서
+ * 다음 노드가 사라질 수 있으므로, 최신 트리에 없으면 직전까지 본 트리(snapshot)의 노드를 쓴다.
+ * 최신 트리를 우선해 구매 후 메뉴처럼 상태가 반영되어야 하는 노드는 갱신된다.
+ */
+export function resolveDialogueNode(
+  entityId: string,
+  state: GameState,
+  nodeId: string,
+  snapshot: DialogueTree | null,
+): DialogueNode {
+  const fresh = getInteraction(entityId, state);
+  return fresh.nodes[nodeId] ?? snapshot?.nodes[nodeId] ?? fresh.nodes[fresh.entry];
+}
+
+/**
  * NPC/조사 대상 상호작용 트리를 상태 기반으로 생성한다.
  * - 대사·분기는 콘텐츠 데이터, 상태 변경은 effects(GameAction)로만.
  * - NPC는 각자의 목적에 따라 정보를 공개하거나 숨긴다(스토리 바이블 원칙 A).
@@ -13,6 +29,17 @@ export interface DialogueTree {
  */
 export function getInteraction(entityId: string, state: GameState): DialogueTree {
   switch (entityId) {
+    case 'old_card':
+      return oldCardInteraction(state);
+    case 'gate_merchant':
+      return gateMerchantDialogue(state);
+    case 'market_gate':
+      return marketGateInteraction(state);
+    case 'market_exit':
+      return tree('시장 입구', '시장 남쪽 문 너머로, 방금 걸어온 흙길이 달빛 아래 뻗어 있다.', [
+        { text: '바깥 길로 나간다', effects: [{ type: 'GOTO_LOCATION', locationId: 'market_road', x: 2, y: 1 }] },
+        { text: '시장에 머무른다' },
+      ]);
     case 'goblin':
       return goblinDialogue(state);
     case 'mira':
@@ -52,6 +79,126 @@ export function getInteraction(entityId: string, state: GameState): DialogueTree
     default:
       return tree('', '특별한 것은 없다.', [{ text: '확인' }]);
   }
+}
+
+// ── 프롤로그: 시장으로 가는 길 ───────────────────────────────────
+
+/**
+ * 프롤로그 퀘스트 단계 진행 효과 — 프롤로그를 진행 중인 새 모험에서만 적용한다.
+ * 기존(프롤로그 도입 전) 세이브의 플레이어가 나중에 길을 되돌아와 카드를 발견해도
+ * 이미 끝난 도입부 퀘스트가 새로 생겨나지 않도록 한다.
+ */
+function prologueStep(state: GameState, stage: string): NonNullable<DialogueChoice['effects']> {
+  const q = state.quests.q_prologue;
+  if (!q || q.stage === 'done') return [];
+  return [{ type: 'SET_QUEST_STAGE', questId: 'q_prologue', stage }];
+}
+
+function oldCardInteraction(state: GameState): DialogueTree {
+  if (state.flags.prologue_card === true) {
+    return tree('', '카드를 주웠던 자리다. 풀숲 너머로 시장의 불빛만 흔들린다.', [{ text: '확인했다' }]);
+  }
+  return tree('', '길가 풀숲 사이에서 무언가 달빛을 받아 반짝인다. 카드 한 장이 흙에 반쯤 묻혀 있다.', [
+    {
+      text: '주워서 살펴본다',
+      event: 'prologue_card',
+      effects: [
+        { type: 'ADD_ITEM', itemId: 'old_spade_card' },
+        { type: 'SET_FLAG', key: 'prologue_card', value: true },
+        ...prologueStep(state, 'card'),
+      ],
+    },
+    { text: '그냥 지나간다' },
+  ]);
+}
+
+function gateMerchantDialogue(state: GameState): DialogueTree {
+  const f = state.flags;
+  const hasCard = state.inventory.includes('old_spade_card');
+
+  if (f.gate_merchant_met === true) {
+    return tree('입구의 상인', '"물건 안 살 거면 비켜, 비켜. 난 지금 바빠." 상인은 눈을 맞추지 않은 채 수레의 냄비만 쓸데없이 다시 정리한다.', [
+      { text: '물러선다' },
+    ]);
+  }
+
+  if (!hasCard) {
+    // 카드를 줍지 않고 온 경우 — 평범한 호객만 한다 (반응 사건은 발생하지 않음)
+    return tree('입구의 상인', '"어이, 여행자! 시장 들어가기 전에 냄비 하나 어때? 안에서 사면 두 배야. 고블린들이 괜히 고블린이겠어?" 상인이 수레를 탕탕 두드린다.', [
+      { text: '괜찮다며 지나간다', effects: [{ type: 'NPC_MET', npcId: 'gate_merchant' }] },
+    ]);
+  }
+
+  return {
+    entry: 'root',
+    nodes: {
+      root: {
+        id: 'root',
+        speaker: '입구의 상인',
+        text: '"어이, 여행자! 시장 들어가기 전에 냄비 하나—" 상인의 말이 뚝 끊긴다. 시선이 네 손, 아니 네가 쥔 카드에 꽂혀 있다.\n\n"...그 카드. 어디서 났어?"',
+        choices: [
+          {
+            text: '"길에서 주웠다."',
+            next: 'backpedal',
+            effects: [
+              { type: 'NPC_MET', npcId: 'gate_merchant' },
+              { type: 'SET_FLAG', key: 'gate_merchant_met', value: true },
+              { type: 'SET_FLAG', key: 'gate_merchant_answer', value: 'told' },
+              ...prologueStep(state, 'merchant'),
+            ],
+          },
+          {
+            text: '"이게 뭔지 아는가?" — 되묻는다',
+            next: 'backpedal',
+            effects: [
+              { type: 'NPC_MET', npcId: 'gate_merchant' },
+              { type: 'SET_FLAG', key: 'gate_merchant_met', value: true },
+              { type: 'SET_FLAG', key: 'gate_merchant_answer', value: 'asked' },
+              ...prologueStep(state, 'merchant'),
+            ],
+          },
+          {
+            text: '대답하지 않고 카드를 품에 넣는다',
+            next: 'backpedal',
+            effects: [
+              { type: 'NPC_MET', npcId: 'gate_merchant' },
+              { type: 'SET_FLAG', key: 'gate_merchant_met', value: true },
+              { type: 'SET_FLAG', key: 'gate_merchant_answer', value: 'hid' },
+              ...prologueStep(state, 'merchant'),
+            ],
+          },
+        ],
+      },
+      backpedal: {
+        id: 'backpedal',
+        speaker: '입구의 상인',
+        text: '상인이 헛기침을 한다. 안경을 고쳐 쓰는 손이 조금 떨린다.\n\n"...아니야. 내가 잘못 봤네. 그런 건 처음 봐."\n\n그러고는 묻지도 않은 냄비 가격을 중얼거리며, 수레를 돌려 등을 보인다. 대화는 거기서 끝이다.',
+        choices: [{ text: '...시장으로 들어가자' }],
+      },
+    },
+  };
+}
+
+function marketGateInteraction(state: GameState): DialogueTree {
+  const toMarket = { type: 'GOTO_LOCATION', locationId: 'market', x: 2, y: 5 } as const;
+  const effects: NonNullable<DialogueChoice['effects']> = [
+    toMarket,
+    ...prologueStep(state, 'done'),
+    { type: 'SET_FLAG', key: 'prologue_done', value: true },
+  ];
+  if (state.flags.prologue_done === true) {
+    return tree('고블린 시장 입구', '붉은 등불이 걸린 시장 문. 안쪽에서 흥정 소리가 끊이지 않는다.', [
+      { text: '시장으로 들어간다', effects: [toMarket] },
+      { text: '길에 머무른다' },
+    ]);
+  }
+  const text = state.flags.prologue_card !== true
+    ? '붉은 등불이 걸린 시장 문. 문틈으로 호객 소리와 환호성이 새어 나온다. ...그런데 방금 지나온 길가에서 뭔가 반짝이지 않았나?'
+    : '붉은 등불이 걸린 시장 문. 문틈으로 호객 소리와 환호성, 누군가 흥정에 이겼다고 소리치는 목소리가 새어 나온다.';
+  return tree('고블린 시장 입구', text, [
+    { text: '시장으로 들어간다', event: 'market_firstlook', effects },
+    { text: '조금 더 둘러본다' },
+  ]);
 }
 
 // ── 그리즐 ─────────────────────────────────────────────────────
@@ -140,6 +287,23 @@ function goblinDialogue(state: GameState): DialogueTree {
       effects: [{ type: 'SET_FLAG', key: 'chip_pressed', value: true }],
     });
   }
+
+  if (f.asked_grizzle_king !== true) {
+    base.nodes.root.choices.splice(base.nodes.root.choices.length - 1, 0, {
+      text: '왕고블린에 대해 묻는다',
+      next: 'king',
+      effects: [
+        { type: 'SET_FLAG', key: 'asked_grizzle_king', value: true },
+        { type: 'SET_FLAG', key: 'heard_goblin_king', value: true },
+      ],
+    });
+  }
+  base.nodes.king = {
+    id: 'king',
+    speaker: '그리즐',
+    text: '"왕고블린 님?! 시장의 전설이지! 무패! 무적! 흥정 한 번에 성 하나를 샀다는 분이라고!" 그리즐이 가슴을 편다. 그러다 목소리를 낮춘다. "...근데 그 양반 앞에서 내 이름은 꺼내지 마. 지난번 판에서 내 좌판 절반을 걸었거든. 크흠."',
+    choices: [{ text: '웃음을 참는다' }],
+  };
 
   base.nodes.chip_look = {
     id: 'chip_look',
@@ -289,6 +453,24 @@ function miraDialogue(state: GameState): DialogueTree {
     ]);
   }
 
+  // ── 왕고블린에 대한 다른 시각 ──
+  if (met && f.asked_mira_king !== true) {
+    base.nodes.root.choices.splice(base.nodes.root.choices.length - 1, 0, {
+      text: '왕고블린에 대해 묻는다',
+      next: 'king',
+      effects: [
+        { type: 'SET_FLAG', key: 'asked_mira_king', value: true },
+        { type: 'SET_FLAG', key: 'heard_goblin_king', value: true },
+      ],
+    });
+    base.nodes.king = {
+      id: 'king',
+      speaker: '약초상 미라',
+      text: '"무패? 흠." 미라가 코웃음을 친다. "지는 판엔 안 앉는 것도 실력이라면 실력이지. 그 양반한테 망신당한 도전자가 한둘이 아니야. 다들 말로 먼저 지고 들어가거든." 그녀가 약초를 한 줌 집어 든다. "언젠가 붙어 보고 싶으면, 시장에서 이름부터 알려. 그 양반은 이름 없는 상대랑은 안 놀아."',
+      choices: [{ text: '기억해 두겠다' }],
+    };
+  }
+
   // ── 과거 캐묻기: 말버릇을 들킨 뒤에만 ──
   if (f.mira_slip === true && f.mira_admitted !== true) {
     base.nodes.root.choices.splice(base.nodes.root.choices.length - 1, 0, {
@@ -355,11 +537,32 @@ function miraDialogue(state: GameState): DialogueTree {
 
 function boardInteraction(state: GameState): DialogueTree {
   const extra = state.flags.read_manifest ? '' : ' 문양의 생김새를 기억해 두었다.';
-  return tree(
-    '시장 게시판',
-    `공고문이 붙어 있다. "도난 화물 주의 — 항구에서 밀수 인장(⚓ 문양)이 찍힌 상자들이 사라짐. 발견 시 신고 바람."${extra}`,
-    [{ text: '확인했다', effects: [{ type: 'SET_FLAG', key: 'read_manifest', value: true }] }],
-  );
+  return {
+    entry: 'root',
+    nodes: {
+      root: {
+        id: 'root',
+        speaker: '시장 게시판',
+        text: `공고문과 포스터가 겹겹이 붙어 있다.\n\n"도난 화물 주의 — 항구에서 밀수 인장(⚓ 문양)이 찍힌 상자들이 사라짐. 발견 시 신고 바람."${extra}\n\n그 위를 반쯤 덮은, 빛바랜 금박 포스터 한 장.`,
+        choices: [
+          {
+            text: '금박 포스터를 읽는다',
+            next: 'poster',
+            effects: [{ type: 'SET_FLAG', key: 'read_manifest', value: true }],
+          },
+          { text: '확인했다', effects: [{ type: 'SET_FLAG', key: 'read_manifest', value: true }] },
+        ],
+      },
+      poster: {
+        id: 'poster',
+        speaker: '빛바랜 포스터',
+        text: '"시장의 절대 군주! 무패의 흥정왕! 왕고블린에게 도전할 자 — 없음!"\n\n포스터 아래, 서로 다른 필체의 낙서들:\n"진짜 무패임. 우리 삼촌도 털림."\n"도전하러 갔다가 신발까지 잃고 옴 — 어느 인간"\n"왕고블린님 만세 (이거 왕고블린이 직접 씀)"',
+        choices: [
+          { text: '...언젠가 만나 보고 싶다', effects: [{ type: 'SET_FLAG', key: 'heard_goblin_king', value: true }] },
+        ],
+      },
+    },
+  };
 }
 
 function cratesInteraction(state: GameState): DialogueTree {

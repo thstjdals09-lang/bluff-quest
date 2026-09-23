@@ -25,6 +25,11 @@ export interface StoryRecordDef {
 }
 
 export const STORY_RECORDS: StoryRecordDef[] = [
+  // 프롤로그
+  { flag: 'prologue_card', kind: 'fact', text: '시장으로 가는 길에서 낡은 스페이드 에이스를 주웠다. 뒷면: "이 카드를 보여주는 사람을 믿지 마라."' },
+  { flag: 'gate_merchant_met', kind: 'fact', text: '시장 입구의 상인이 카드를 보자마자 "그 카드, 어디서 났어?"라고 물었다. 그리고 곧 말을 바꿨다.' },
+  { flag: 'gate_merchant_met', kind: 'claim', text: '입구의 상인: "내가 잘못 봤네. 그런 건 처음 봐."' },
+  { flag: 'heard_goblin_king', kind: 'rumor', text: '고블린 시장의 챔피언 왕고블린 — "무패의 흥정왕"이라는 소문. 망신당하고 돌아온 도전자가 많다.' },
   // 고블린 시장
   { flag: 'read_manifest', kind: 'fact', text: '시장 게시판: 항구에서 밀수 인장(⚓)이 찍힌 도난 화물이 사라졌다는 공고를 봤다.' },
   { flag: 'chip_refused', kind: 'fact', text: '돈이라면 사족을 못 쓰는 그리즐이, 좌판의 검은 칩만은 값도 듣지 않고 팔기를 거절했다.' },

@@ -9,14 +9,15 @@ import { logEvent } from './log';
  * v2: 비주얼 씬 도입으로 지역 그리드 좌표계 변경 — 위치만 재배치하는 마이그레이션 제공
  * v3: 월드 프레임워크 — 방문 지역·발견 기록·포커 커리어 필드 추가
  * v4: 스토리 확장 — 단일 quest 필드를 다중 quests 맵으로 전환
+ * v5: 타이틀·프롤로그 — 플레이어 이름 추가
  */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
-export function createInitialState(): GameState {
+export function createInitialState(name = '이름 없는 승부사'): GameState {
   const loc = LOCATIONS.market;
   return {
     version: SAVE_VERSION,
-    player: { location: loc.id, x: loc.playerStart.x, y: loc.playerStart.y, gold: 10 },
+    player: { name, location: loc.id, x: loc.playerStart.x, y: loc.playerStart.y, gold: 10 },
     inventory: [],
     flags: {},
     npcs: {},
@@ -27,6 +28,20 @@ export function createInitialState(): GameState {
     visitedRegions: ['goblin_market'],
     discovered: [],
     career: { duels: 0, wins: 0, losses: 0, walkaways: 0 },
+  };
+}
+
+/** 새 모험 시작: 프롤로그(시장으로 가는 길)에서 출발한다. */
+export function createNewAdventureState(name: string): GameState {
+  const base = createInitialState(name);
+  const road = LOCATIONS.market_road;
+  return {
+    ...base,
+    player: { ...base.player, location: road.id, x: road.playerStart.x, y: road.playerStart.y },
+    quests: {
+      q_prologue: { stage: 'road', completed: [] },
+      q_invitation: { stage: 'start', completed: [] },
+    },
   };
 }
 

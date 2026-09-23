@@ -12,6 +12,8 @@ import marketBg from '../../assets/market-bg.jpg';
 import warehouseBg from '../../assets/warehouse-bg.jpg';
 import portBg from '../../assets/port-docks-bg.jpg';
 import finStand from '../../assets/fin-stand.png';
+import roadBg from '../../assets/market-road-bg.jpg';
+import gateMerchantCart from '../../assets/gate-merchant-cart.png';
 import playerFront from '../../assets/player-front.png';
 import playerBack from '../../assets/player-back.png';
 import playerLeft from '../../assets/player-left.png';
@@ -35,7 +37,12 @@ export const PLAYER_SPRITES: Record<Facing, string> = {
 /** 씬 오브젝트의 시각 정보 — 위치는 LOCATIONS의 엔티티 그리드 좌표에서 투영 */
 export interface SceneObjectVisual {
   entityId: string;
+  /** 빈 문자열이면 이미지 대신 glow 표시만 사용 */
   sprite: string;
+  /** 바닥에 떨어진 물건 등 — 반짝이는 빛으로 표시 */
+  glow?: boolean;
+  /** 이 플래그가 켜지면 오브젝트를 숨긴다 (예: 주운 물건) */
+  hideWhenFlag?: string;
   /** 원근 스케일 1.0 기준, 씬 높이 대비 스프라이트 높이(%) */
   height: number;
   /** 화면 X 미세 조정 (씬 폭 %) */
@@ -75,6 +82,24 @@ export interface SceneDef {
 }
 
 export const SCENES: Record<string, SceneDef> = {
+  market_road: {
+    locationId: 'market_road',
+    bg: roadBg,
+    aspect: '2 / 3',
+    bgAspect: 1376 / 2039,
+    cameraZoom: 1.6,
+    projection: {
+      top: { left: 34, right: 66, y: 17 },
+      bottom: { left: 18, right: 80, y: 100 },
+      scaleTop: 0.58,
+      scaleBottom: 1.0,
+    },
+    playerHeight: 17,
+    objects: [
+      { entityId: 'gate_merchant', sprite: gateMerchantCart, height: 19, offsetX: 8, nameplate: true },
+      { entityId: 'old_card', sprite: '', glow: true, height: 3, hideWhenFlag: 'prologue_card' },
+    ],
+  },
   market: {
     locationId: 'market',
     bg: marketBg,

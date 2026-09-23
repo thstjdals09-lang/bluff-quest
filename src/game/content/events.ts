@@ -45,6 +45,30 @@ EVENTS.invitation_back = {
   footnote: '사실 확인: 초대장은 특정한 이름이 아니라 \'자리\'에 보내진 것이다.',
 };
 
+EVENTS.prologue_opening = {
+  id: 'prologue_opening',
+  icon: '🌙',
+  title: '{name}',
+  text: '달빛 아래 흙길. 가벼운 주머니와 낡은 가방 하나.\n\n길 끝, 붉은 등불이 걸린 문 너머에서\n호객 소리와 환호성이 바람에 실려 온다.\n\n고블린 시장 — 누구나 말과 패를 무기로 승부하는 곳.',
+  footnote: '아직 아무도 모르는 이름이다.',
+};
+
+EVENTS.prologue_card = {
+  id: 'prologue_card',
+  icon: '🂡',
+  title: '낡은 스페이드 카드',
+  text: '풀숲 사이, 달빛에 무언가 반짝인다.\n\n낡은 스페이드 에이스 한 장. 흔한 카드다 — 뒤집기 전까지는.\n\n뒷면에, 긁어 쓴 듯한 글씨:\n"이 카드를 보여주는 사람을 믿지 마라."\n\n누가 흘렸을까. 누가 적었을까. 무엇을 경고하는 걸까.',
+  footnote: '낡은 스페이드 카드를 가방에 넣었다.',
+};
+
+EVENTS.market_firstlook = {
+  id: 'market_firstlook',
+  icon: '🏮',
+  title: '고블린 시장',
+  text: '문을 지나자 소음이 쏟아진다.\n\n"골라 골라! 진짜 용의 비늘! 아마도!"\n"방금 네가 속인 거잖아!" "속은 쪽이 진 거지!"\n어디선가 환호성 — 누군가 크게 딴 모양이다.\n\n거짓말과 흥정과 웃음이 뒤섞인 밤 시장.\n여기서라면, 이름 없는 승부사도 이야기를 시작할 수 있을 것 같다.',
+  footnote: '고블린 시장에 도착했다. 자유롭게 탐험해 보자.',
+};
+
 export function getEventById(id: string): EventDef | undefined {
   return EVENTS[id];
 }

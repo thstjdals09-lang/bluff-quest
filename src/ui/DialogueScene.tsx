@@ -1,5 +1,6 @@
 import type { DialogueChoice, GameState } from '../game/types';
-import { getInteraction } from '../game/content/dialogues';
+import type { DialogueTree } from '../game/content/dialogues';
+import { resolveDialogueNode } from '../game/content/dialogues';
 import { NPCS } from '../game/content/npcs';
 import { LOCATIONS } from '../game/content/world';
 import { SCENES } from '../game/content/scenes';
@@ -13,11 +14,11 @@ export function DialogueScene(props: {
   state: GameState;
   entityId: string;
   nodeId: string;
+  snapshot: DialogueTree | null;
   onChoice: (choice: DialogueChoice) => void;
   onClose: () => void;
 }) {
-  const treeData = getInteraction(props.entityId, props.state);
-  const node = treeData.nodes[props.nodeId] ?? treeData.nodes[treeData.entry];
+  const node = resolveDialogueNode(props.entityId, props.state, props.nodeId, props.snapshot);
   const npc = NPCS.find((n) => n.id === props.entityId);
   const scene = SCENES[props.state.player.location];
   const entity = LOCATIONS[props.state.player.location]?.entities.find((e) => e.id === props.entityId);

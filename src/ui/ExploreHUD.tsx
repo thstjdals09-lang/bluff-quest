@@ -7,7 +7,12 @@ import { ITEMS, getTrackedQuest } from '../game/content/world';
  * 탐험 화면(MODE A) 위에 겹쳐지는 인게임 HUD.
  * 좌상단: 금화·퀘스트 트래커 / 우상단: 지도·가방·일지 아이콘.
  */
-export function ExploreHUD(props: { state: GameState; onNavigate: (s: ScreenId) => void }) {
+export function ExploreHUD(props: {
+  state: GameState;
+  onNavigate: (s: ScreenId) => void;
+  /** 프롤로그 중에는 월드맵 이동을 숨긴다 */
+  hideMap?: boolean;
+}) {
   const { state } = props;
   const [bagOpen, setBagOpen] = useState(false);
   const tracked = getTrackedQuest(state);
@@ -31,10 +36,12 @@ export function ExploreHUD(props: { state: GameState; onNavigate: (s: ScreenId) 
       </div>
 
       <div className="hud-top-right">
-        <button className="hud-icon" onClick={() => props.onNavigate('worldmap')}>
-          <span>🗺️</span>
-          <label>지도</label>
-        </button>
+        {!props.hideMap && (
+          <button className="hud-icon" onClick={() => props.onNavigate('worldmap')}>
+            <span>🗺️</span>
+            <label>지도</label>
+          </button>
+        )}
         <button className="hud-icon" onClick={() => setBagOpen(true)}>
           <span>🎒</span>
           <label>가방</label>

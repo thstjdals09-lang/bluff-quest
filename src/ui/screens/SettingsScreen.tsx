@@ -1,21 +1,25 @@
-import type { Dispatch } from 'react';
-import type { GameAction, GameState } from '../../game/types';
+import type { GameState } from '../../game/types';
 import { SAVE_VERSION } from '../../game/state';
-import { clearSave, getSaveMeta } from '../../game/save';
+import { getSaveMeta } from '../../game/save';
+import { getAccountById, getCurrentAccountId } from '../../game/accounts';
 
-export function SettingsScreen(props: { state: GameState; dispatch: Dispatch<GameAction> }) {
+export function SettingsScreen(props: { state: GameState; onExitToTitle: () => void }) {
   const meta = getSaveMeta();
-
-  const newGame = () => {
-    if (window.confirm('정말 처음부터 시작할까요? 현재 세이브 데이터가 삭제됩니다.')) {
-      clearSave();
-      props.dispatch({ type: 'RESET_GAME' });
-    }
-  };
+  const accountId = getCurrentAccountId();
+  const account = accountId ? getAccountById(accountId) : undefined;
 
   return (
     <div className="screen">
       <h2 className="screen-title">⚙️ 설정</h2>
+
+      <div className="card">
+        <b>👤 계정</b>
+        <p>
+          {account?.name ?? '알 수 없음'} <span className="dim">· 승부사 {props.state.player.name}</span>
+        </p>
+        <p className="dim">이 기기에 저장되는 프로필입니다. 다른 기기와는 동기화되지 않습니다.</p>
+        <button onClick={props.onExitToTitle}>🏠 저장하고 타이틀로</button>
+      </div>
 
       <div className="card">
         <b>💾 세이브</b>
@@ -23,10 +27,10 @@ export function SettingsScreen(props: { state: GameState; dispatch: Dispatch<Gam
           마지막 자동 저장: {meta ? new Date(meta.savedAt).toLocaleString() : '없음'} (v
           {meta?.version ?? SAVE_VERSION})
         </p>
-        <p className="dim">게임은 중요한 행동 후와 화면 이탈 시 자동으로 저장된다.</p>
-        <button className="danger" onClick={newGame}>
-          🔄 처음부터 시작 (세이브 삭제)
-        </button>
+        <p className="dim">
+          게임은 중요한 행동 후와 화면 이탈 시 자동으로 저장된다. 처음부터 다시 하려면 타이틀에서
+          '새 모험'을 선택한다(확인 절차가 있다).
+        </p>
       </div>
 
       <div className="card">

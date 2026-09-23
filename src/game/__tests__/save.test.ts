@@ -38,7 +38,7 @@ describe('세이브 시스템', () => {
     };
     const restored = importSave(JSON.stringify(v1));
     expect(restored).not.toBeNull();
-    expect(restored!.version).toBe(4);
+    expect(restored!.version).toBe(5);
     expect(restored!.inventory).toContain('old_key');
     expect(restored!.player.gold).toBe(15);
     // v3→v4: 단일 quest → quests 맵 이전
@@ -67,7 +67,7 @@ describe('세이브 시스템', () => {
     };
     const restored = importSave(JSON.stringify(v2));
     expect(restored).not.toBeNull();
-    expect(restored!.version).toBe(4);
+    expect(restored!.version).toBe(5);
     // v2→v3→v4에서는 위치를 건드리지 않는다
     expect(restored!.player.location).toBe('warehouse');
     expect(restored!.player.x).toBe(2);
@@ -90,7 +90,7 @@ describe('세이브 시스템', () => {
     delete (v3 as Record<string, unknown>).quests;
     const restored = importSave(JSON.stringify(v3));
     expect(restored).not.toBeNull();
-    expect(restored!.version).toBe(4);
+    expect(restored!.version).toBe(5);
     expect(restored!.quests.q_invitation.stage).toBe('done');
     // 초대장 보유 → 항구 해금 유지 → 항구 이동 시 신규 메인 퀘스트 자동 시작
     const atPort = reducer(restored!, { type: 'GOTO_LOCATION', locationId: 'port_docks', x: 3, y: 8 });

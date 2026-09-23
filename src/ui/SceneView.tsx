@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
-import type { LocationDef, PlayerState } from '../game/types';
+import type { FlagValue, LocationDef, PlayerState } from '../game/types';
 import type { Facing } from '../game/content/scenes';
 import { PLAYER_SPRITES, SCENES, projectToScreen } from '../game/content/scenes';
 import { getDevView, subscribeDevView } from '../game/devview';
@@ -25,6 +25,9 @@ export function SceneView(props: {
   facing: Facing;
   moving: boolean;
   highlightId: string | null;
+  flags: Record<string, FlagValue>;
+  /** 엔티티별 호객·혼잣말 말풍선 (없으면 표시 안 함) */
+  barks?: Record<string, string>;
 }) {
   const { location, player } = props;
   const scene = SCENES[location.id];
@@ -97,23 +100,46 @@ export function SceneView(props: {
         {scene.objects.map((obj) => {
           const entity = location.entities.find((e) => e.id === obj.entityId);
           if (!entity) return null;
+          if (obj.hideWhenFlag && props.flags[obj.hideWhenFlag] === true) return null;
           const pt = project(entity.x, entity.y);
           const x = pt.x + (obj.offsetX ?? 0);
           const y = pt.y + (obj.offsetY ?? 0);
           const h = obj.height * pt.scale;
           const highlighted = props.highlightId === entity.id;
+          const bark = props.barks?.[entity.id];
           return (
             <div key={obj.entityId}>
-              <img
-                className={`scene-obj ${highlighted ? 'lit' : ''}`}
-                src={obj.sprite}
-                alt={entity.name}
-                draggable={false}
-                style={{ left: `${x}%`, top: `${y}%`, height: `${h}%`, zIndex: pt.z }}
-              />
+              {obj.glow ? (
+                <div
+                  className="scene-glow"
+                  style={{ left: `${x}%`, top: `${y}%`, width: `${h * 1.6}%`, zIndex: pt.z }}
+                />
+              ) : (
+                <img
+                  className={`scene-obj ${highlighted ? 'lit' : ''}`}
+                  src={obj.sprite}
+                  alt={entity.name}
+                  draggable={false}
+                  style={{ left: `${x}%`, top: `${y}%`, height: `${h}%`, zIndex: pt.z }}
+                />
+              )}
               {obj.nameplate && (
                 <div className="nameplate" style={{ left: `${x}%`, top: `${y - h - 0.5}%`, zIndex: pt.z }}>
                   {entity.name}
+                </div>
+              )}
+              {bark && !highlighted && worldW > 0 && (
+                <div
+                  className="scene-bark"
+                  style={{
+                    // 말풍선은 화면(카메라) 안쪽에 보이도록 가로 위치를 보정한다
+                    left: `${((clamp((x / 100) * worldW + tx, 96, frame.w - 96) - tx) / worldW) * 100}%`,
+                    // 말풍선 아래 끝이 상단 HUD(약 150px)보다 아래에 오도록
+                    top: `${((Math.max(((y - h - 3) / 100) * worldH + ty, 150) - ty) / worldH) * 100}%`,
+                    zIndex: pt.z + 2,
+                  }}
+                >
+                  {bark}
                 </div>
               )}
               {highlighted && (

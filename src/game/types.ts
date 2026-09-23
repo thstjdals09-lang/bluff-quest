@@ -65,6 +65,8 @@ export interface NpcRuntime {
 export type FlagValue = boolean | number | string;
 
 export interface PlayerState {
+  /** v5: 승부사 이름 (새 모험 시작 시 설정) */
+  name: string;
   location: string;
   x: number;
   y: number;

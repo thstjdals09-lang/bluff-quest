@@ -34,6 +34,14 @@ export const COLLECTION: CollectionCategoryDef[] = [
     name: '특별한 카드',
     desc: '세계 곳곳의 사건에 얽힌 단 한 장뿐인 카드들.',
     entries: [
+      {
+        id: 'old_spade_card',
+        name: '낡은 스페이드 카드',
+        icon: '🂡',
+        itemId: 'old_spade_card',
+        desc: '뒷면에 "이 카드를 보여주는 사람을 믿지 마라."라고 적힌 스페이드 에이스.',
+        status: 'obtainable',
+      },
       { id: 'card_slot_1', name: '???', icon: '🂠', desc: '미공개', status: 'unrevealed' },
       { id: 'card_slot_2', name: '???', icon: '🂠', desc: '미공개', status: 'unrevealed' },
     ],

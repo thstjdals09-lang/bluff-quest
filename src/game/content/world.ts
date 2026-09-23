@@ -8,6 +8,26 @@ import type { GameState, ItemDef, LocationDef, QuestDef, QuestStageDef } from '.
  * 그리드는 배경 플레이트(scenes.ts)의 길 영역에 원근 투영된다.
  */
 export const LOCATIONS: Record<string, LocationDef> = {
+  market_road: {
+    id: 'market_road',
+    name: '시장으로 가는 길',
+    layout: [
+      '#####', // 0: 시장 입구 문
+      '.....', // 1 (우: 입구의 상인)
+      '.....', // 2
+      '.....', // 3
+      '.....', // 4 (길가의 반짝이는 것)
+      '.....', // 5
+      '.....', // 6 (시작 지점)
+      '.....', // 7
+    ],
+    entities: [
+      { id: 'market_gate', kind: 'poi', x: 2, y: 0, icon: '🏮', name: '고블린 시장 입구' },
+      { id: 'gate_merchant', kind: 'npc', x: 4, y: 1, icon: '🛒', name: '입구의 상인' },
+      { id: 'old_card', kind: 'poi', x: 1, y: 4, icon: '✨', name: '길가의 반짝이는 것' },
+    ],
+    playerStart: { x: 2, y: 6 },
+  },
   market: {
     id: 'market',
     name: '고블린 시장',
@@ -29,6 +49,7 @@ export const LOCATIONS: Record<string, LocationDef> = {
       { id: 'goblin', kind: 'npc', x: 0, y: 4, icon: '👺', name: '그리즐' },
       { id: 'crates', kind: 'poi', x: 3, y: 6, icon: '📦', name: '부서진 상자 더미' },
       { id: 'mira', kind: 'npc', x: 6, y: 6, icon: '🧙', name: '약초상 미라' },
+      { id: 'market_exit', kind: 'poi', x: 3, y: 9, icon: '🛤️', name: '시장 입구 (바깥 길)' },
     ],
     playerStart: { x: 2, y: 6 },
   },
@@ -79,6 +100,12 @@ export const LOCATIONS: Record<string, LocationDef> = {
 // ── 아이템 정의 ────────────────────────────────────────────────
 
 export const ITEMS: Record<string, ItemDef> = {
+  old_spade_card: {
+    id: 'old_spade_card',
+    name: '낡은 스페이드 카드',
+    icon: '🂡',
+    desc: '시장으로 가는 길에서 주운 낡은 스페이드 에이스. 뒷면에 이렇게 적혀 있다 — "이 카드를 보여주는 사람을 믿지 마라." 누가, 왜 적었는지는 알 수 없다.',
+  },
   old_key: {
     id: 'old_key',
     name: '낡은 열쇠',
@@ -102,6 +129,18 @@ export const ITEMS: Record<string, ItemDef> = {
 // ── 퀘스트 정의 ────────────────────────────────────────────────
 
 export const QUESTS: Record<string, QuestDef> = {
+  q_prologue: {
+    id: 'q_prologue',
+    name: '이름 없는 승부사',
+    type: 'main',
+    regionId: 'goblin_market',
+    stages: [
+      { id: 'road', title: '시장으로 가는 길', objective: '불빛과 소음이 새어 나오는 고블린 시장 입구로 향한다. …길에 뭔가 반짝인다.' },
+      { id: 'card', title: '낡은 카드', objective: '뒷면에 경고가 적힌 스페이드 카드를 주웠다. 시장 입구의 상인에게 가 보자.' },
+      { id: 'merchant', title: '입구의 상인', objective: '상인이 카드를 알아본 듯하더니 말을 바꿨다. …일단 시장으로 들어가자.' },
+      { id: 'done', title: '고블린 시장', objective: '시장에 도착했다. 승부사로서의 모험이 시작된다.' },
+    ],
+  },
   q_invitation: {
     id: 'q_invitation',
     name: '수상한 초대장',
@@ -152,7 +191,7 @@ export const QUESTS: Record<string, QuestDef> = {
 };
 
 /** HUD 퀘스트 트래커가 보여줄 현재 퀘스트 — 우선순위 순서로 미완료 퀘스트를 고른다. */
-const TRACK_ORDER = ['q_night_pier', 'q_invitation', 'q_black_chip', 'q_mira_past'];
+const TRACK_ORDER = ['q_prologue', 'q_night_pier', 'q_invitation', 'q_black_chip', 'q_mira_past'];
 
 export function getTrackedQuest(
   state: GameState,

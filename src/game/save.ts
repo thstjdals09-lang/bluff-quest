@@ -3,9 +3,18 @@ import { SAVE_VERSION, createInitialState } from './state';
 import { LOCATIONS } from './content/world';
 import { logEvent } from './log';
 
-const SAVE_KEY = 'bluff_quest_save';
+import { LEGACY_SAVE_KEY, accountMetaKey, accountSaveKey, getCurrentAccountId } from './accounts';
+
+/** 현재 계정의 세이브 키 (계정 미선택 시 레거시 키 — 정상 흐름에서는 발생하지 않음) */
+function saveKey(): string {
+  const id = getCurrentAccountId();
+  return id ? accountSaveKey(id) : LEGACY_SAVE_KEY;
+}
+function metaKey(): string {
+  const id = getCurrentAccountId();
+  return id ? accountMetaKey(id) : 'bluff_quest_save_meta';
+}
 const BACKUP_KEY = 'bluff_quest_save_corrupt_backup';
-const META_KEY = 'bluff_quest_save_meta';
 
 export interface SaveMeta {
   savedAt: string;
@@ -68,6 +77,17 @@ export function migrateSave(data: unknown): unknown {
     };
   }
 
+  // v4 → v5: 플레이어 이름 필드 추가 (기존 플레이어는 기본 명칭)
+  if (cur.version === 4) {
+    const player = (cur.player ?? {}) as Record<string, unknown>;
+    logEvent('info', '세이브 마이그레이션 v4 → v5: 승부사 이름 필드를 추가했습니다.');
+    cur = {
+      ...cur,
+      version: 5,
+      player: { ...player, name: typeof player.name === 'string' ? player.name : '이름 없는 승부사' },
+    };
+  }
+
   return cur;
 }
 
@@ -78,6 +98,7 @@ export function validateSave(data: unknown): data is GameState {
   return (
     s.version === SAVE_VERSION &&
     typeof s.player === 'object' && s.player !== null &&
+    typeof s.player.name === 'string' &&
     typeof s.player.location === 'string' &&
     typeof s.player.x === 'number' &&
     typeof s.player.y === 'number' &&
@@ -95,9 +116,9 @@ export function validateSave(data: unknown): data is GameState {
 
 export function saveGame(state: GameState): boolean {
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    localStorage.setItem(saveKey(), JSON.stringify(state));
     const meta: SaveMeta = { savedAt: new Date().toISOString(), version: SAVE_VERSION };
-    localStorage.setItem(META_KEY, JSON.stringify(meta));
+    localStorage.setItem(metaKey(), JSON.stringify(meta));
     return true;
   } catch (e) {
     logEvent('error', `저장 실패: ${String(e)}`);
@@ -108,7 +129,7 @@ export function saveGame(state: GameState): boolean {
 /** 저장된 게임 로드. 손상 시 백업 후 새 게임 상태를 반환. */
 export function loadGame(): { state: GameState; loadedFromSave: boolean } {
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
+    const raw = localStorage.getItem(saveKey());
     if (!raw) return { state: createInitialState(), loadedFromSave: false };
     const parsed: unknown = migrateSave(JSON.parse(raw));
     if (!validateSave(parsed)) {
@@ -120,7 +141,7 @@ export function loadGame(): { state: GameState; loadedFromSave: boolean } {
   } catch (e) {
     logEvent('error', `세이브 로드 실패: ${String(e)} — 새 게임을 시작합니다.`);
     try {
-      const raw = localStorage.getItem(SAVE_KEY);
+      const raw = localStorage.getItem(saveKey());
       if (raw) localStorage.setItem(BACKUP_KEY, raw);
     } catch { /* localStorage 접근 불가 환경 */ }
     return { state: createInitialState(), loadedFromSave: false };
@@ -129,7 +150,7 @@ export function loadGame(): { state: GameState; loadedFromSave: boolean } {
 
 export function getSaveMeta(): SaveMeta | null {
   try {
-    const raw = localStorage.getItem(META_KEY);
+    const raw = localStorage.getItem(metaKey());
     if (!raw) return null;
     return JSON.parse(raw) as SaveMeta;
   } catch {
@@ -139,8 +160,8 @@ export function getSaveMeta(): SaveMeta | null {
 
 export function clearSave(): void {
   try {
-    localStorage.removeItem(SAVE_KEY);
-    localStorage.removeItem(META_KEY);
+    localStorage.removeItem(saveKey());
+    localStorage.removeItem(metaKey());
     logEvent('info', '세이브 데이터 삭제됨');
   } catch (e) {
     logEvent('error', `세이브 삭제 실패: ${String(e)}`);
@@ -149,7 +170,7 @@ export function clearSave(): void {
 
 export function exportSave(): string | null {
   try {
-    return localStorage.getItem(SAVE_KEY);
+    return localStorage.getItem(saveKey());
   } catch {
     return null;
   }
