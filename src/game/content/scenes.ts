@@ -57,6 +57,13 @@ export interface SceneDef {
   bg: string;
   /** 씬 컨테이너 가로:세로 비율 */
   aspect: string;
+  /** 배경 이미지 가로/세로 비 (카메라 월드 크기 계산용) */
+  bgAspect: number;
+  /**
+   * 카메라 줌 — 뷰포트 세로에 씬 전체 높이의 1/zoom 만큼만 보인다.
+   * 카메라는 플레이어를 따라가며 씬 경계에서 클램프된다.
+   */
+  cameraZoom: number;
   projection: SceneProjection;
   /** 원근 스케일 1.0 기준 플레이어 높이 (씬 높이 %) */
   playerHeight: number;
@@ -70,6 +77,8 @@ export const SCENES: Record<string, SceneDef> = {
     locationId: 'market',
     bg: marketBg,
     aspect: '2 / 3',
+    bgAspect: 1376 / 2039,
+    cameraZoom: 1.85,
     projection: {
       top: { left: 32, right: 69, y: 16 },
       bottom: { left: 8, right: 92, y: 101 },
@@ -89,6 +98,8 @@ export const SCENES: Record<string, SceneDef> = {
     locationId: 'warehouse',
     bg: warehouseBg,
     aspect: '2 / 3',
+    bgAspect: 1376 / 2039,
+    cameraZoom: 1.45,
     projection: {
       top: { left: 28, right: 72, y: 30 },
       bottom: { left: 20, right: 80, y: 90 },

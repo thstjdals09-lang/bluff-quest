@@ -166,6 +166,8 @@ export interface DialogueChoice {
   next?: string;
   /** 대결 시작 트리거 */
   startEncounter?: boolean;
+  /** 선택 후 표시할 이벤트 장면 id (content/events.ts) */
+  event?: string;
 }
 
 export interface DialogueNode {

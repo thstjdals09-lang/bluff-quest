@@ -183,7 +183,7 @@ function warehouseDoorInteraction(state: GameState): DialogueTree {
           choices: [
             {
               text: '문을 연다',
-              next: 'opened',
+              event: 'warehouse_opened',
               effects: [
                 { type: 'UNLOCK', id: 'warehouse' },
                 { type: 'SET_FLAG', key: 'warehouse_opened', value: true },
@@ -230,6 +230,7 @@ function chestInteraction(state: GameState): DialogueTree {
         choices: [
           {
             text: '초대장을 챙긴다',
+            event: 'found_invitation',
             effects: [
               { type: 'ADD_ITEM', itemId: 'invitation' },
               { type: 'SET_FLAG', key: 'found_invitation', value: true },

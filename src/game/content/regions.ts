@@ -113,7 +113,7 @@ export const REGIONS: RegionDef[] = [
       { name: '고블린 포커 클럽', desc: '시장 뒷골목의 소규모 클럽.', status: 'coming_soon' },
     ],
     questIds: ['q_invitation'],
-    entry: { locationId: 'market', x: 3, y: 8 },
+    entry: { locationId: 'market', x: 2, y: 6 },
   },
   {
     id: 'trickster_port',

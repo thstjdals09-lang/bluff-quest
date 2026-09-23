@@ -1,6 +1,8 @@
 import type { GameState } from '../types';
 import goblinPortrait from '../../assets/goblin-stall.png';
 import miraPortrait from '../../assets/mira-stall.png';
+import goblinBust from '../../assets/grix-bust.png';
+import miraBust from '../../assets/mira-bust.png';
 
 /**
  * 주요 NPC 등록부 — 관계 화면과 향후 지역 간 재등장 시스템의 기반.
@@ -15,6 +17,8 @@ export interface NpcDef {
   role: string;
   desc: string;
   portrait: string | null;
+  /** 대화 장면(MODE B)용 클로즈업 일러스트 */
+  bust?: string;
   /** 다른 지역에서 재등장할 수 있는 인물인가 */
   reappears: boolean;
   questIds: string[];
@@ -28,6 +32,7 @@ export const NPCS: NpcDef[] = [
     role: '상자 게임의 고블린',
     desc: '자칭 "시장에서 제일 정직한 고블린". 진실과 거짓을 반반 섞어 쓰는 좌판의 주인.',
     portrait: goblinPortrait,
+    bust: goblinBust,
     reappears: true,
     questIds: ['q_invitation'],
   },
@@ -38,6 +43,7 @@ export const NPCS: NpcDef[] = [
     role: '약초상 · 시장의 소식통',
     desc: '시장의 소문이 모두 거쳐 가는 약초 좌판의 주인. 패배한 도전자에게만 들려주는 조언이 있다.',
     portrait: miraPortrait,
+    bust: miraBust,
     reappears: true,
     questIds: [],
   },

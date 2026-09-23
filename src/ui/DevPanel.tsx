@@ -7,6 +7,7 @@ import { getScenario, INFO_ACTION_LABELS } from '../game/encounter';
 import { clearSave, exportSave, getSaveMeta, importSave, loadGame, saveGame } from '../game/save';
 import { getLog, subscribeLog } from '../game/log';
 import { getDevView, setDevView, subscribeDevView } from '../game/devview';
+import { getUiDebug, subscribeUiDebug } from '../game/uidebug';
 import { SCENES, projectToScreen } from '../game/content/scenes';
 import { LOCATIONS } from '../game/content/world';
 import { REGIONS, getRegionAccess } from '../game/content/regions';
@@ -54,6 +55,9 @@ export function DevPanel(props: {
 }
 
 function StateTab({ state }: { state: GameState }) {
+  const [, forceUi] = useState(0);
+  useEffect(() => subscribeUiDebug(() => forceUi((n) => n + 1)), []);
+  const ui = getUiDebug();
   const loc = LOCATIONS[state.player.location];
   const scene = SCENES[state.player.location];
   const pt = loc && scene
@@ -62,11 +66,20 @@ function StateTab({ state }: { state: GameState }) {
   return (
     <div>
       <p>
+        화면 모드: <b>{ui.mode}</b>
+        {ui.camera && (
+          <>
+            {' '}· 카메라 zoom {ui.camera.zoom} · 월드 {Math.round(ui.camera.worldW)}×{Math.round(ui.camera.worldH)}px ·
+            오프셋 ({Math.round(ui.camera.tx)}, {Math.round(ui.camera.ty)}) · 뷰포트 {ui.camera.frameW}×{ui.camera.frameH}
+          </>
+        )}
+      </p>
+      <p>
         위치: <b>{state.player.location}</b> 그리드 ({state.player.x}, {state.player.y}) · 골드 {state.player.gold}
       </p>
       {pt && (
         <p>
-          렌더링: 화면 ({pt.x.toFixed(1)}%, {pt.y.toFixed(1)}%) · 스케일 {pt.scale.toFixed(2)} · z-index {pt.z}
+          렌더링: 월드 ({pt.x.toFixed(1)}%, {pt.y.toFixed(1)}%) · 스케일 {pt.scale.toFixed(2)} · z-index {pt.z}
         </p>
       )}
       <p>
@@ -132,7 +145,7 @@ function ControlTab({ state, dispatch }: { state: GameState; dispatch: Dispatch<
       <div>
         <b>장소</b>
         <button onClick={() => dispatch({ type: 'UNLOCK', id: 'warehouse' })}>창고 해금</button>
-        <button onClick={() => dispatch({ type: 'GOTO_LOCATION', locationId: 'market', x: 3, y: 8 })}>시장으로</button>
+        <button onClick={() => dispatch({ type: 'GOTO_LOCATION', locationId: 'market', x: 2, y: 6 })}>시장으로</button>
         <button onClick={() => dispatch({ type: 'GOTO_LOCATION', locationId: 'warehouse', x: 2, y: 4 })}>창고로</button>
       </div>
       <div>

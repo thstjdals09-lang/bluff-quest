@@ -30,7 +30,7 @@ export const LOCATIONS: Record<string, LocationDef> = {
       { id: 'crates', kind: 'poi', x: 3, y: 6, icon: '📦', name: '부서진 상자 더미' },
       { id: 'mira', kind: 'npc', x: 6, y: 6, icon: '🧙', name: '약초상 미라' },
     ],
-    playerStart: { x: 3, y: 8 },
+    playerStart: { x: 2, y: 6 },
   },
   warehouse: {
     id: 'warehouse',

@@ -6,9 +6,11 @@ import { LOCATIONS } from './game/content/world';
 import { getInteraction } from './game/content/dialogues';
 import type { Facing } from './game/content/scenes';
 import { SceneView } from './ui/SceneView';
-import { DialogueView } from './ui/DialogueView';
+import { DialogueScene } from './ui/DialogueScene';
 import { EncounterView } from './ui/EncounterView';
-import { HUD } from './ui/HUD';
+import { EventScene } from './ui/EventScene';
+import { ExploreHUD } from './ui/ExploreHUD';
+import { TouchControls } from './ui/TouchControls';
 import { DevPanel } from './ui/DevPanel';
 import { GlobalNav } from './ui/GlobalNav';
 import type { ScreenId } from './ui/GlobalNav';
@@ -21,6 +23,7 @@ import { CollectionScreen } from './ui/screens/CollectionScreen';
 import { SpecialScreen } from './ui/screens/SpecialScreen';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
 import { logEvent } from './game/log';
+import { setUiMode } from './game/uidebug';
 
 export function isDevMode(): boolean {
   return import.meta.env.DEV || new URLSearchParams(window.location.search).has('dev');
@@ -33,6 +36,7 @@ export function App() {
     return state;
   });
   const [dialogue, setDialogue] = useState<{ entityId: string; nodeId: string } | null>(null);
+  const [eventId, setEventId] = useState<string | null>(null);
   const [devOpen, setDevOpen] = useState(false);
   const [screen, setScreen] = useState<ScreenId>('explore');
   const [facing, setFacing] = useState<Facing>('down');
@@ -74,7 +78,21 @@ export function App() {
   }, [location, state.player.x, state.player.y]);
 
   const encounterActive = state.activeEncounter !== null;
-  const exploreActive = screen === 'explore' && !encounterActive && dialogue === null;
+  const exploreActive =
+    screen === 'explore' && !encounterActive && dialogue === null && eventId === null;
+
+  // 현재 화면 모드 (개발자 툴 표시용)
+  const uiMode =
+    screen !== 'explore'
+      ? `system:${screen}`
+      : encounterActive
+        ? 'encounter'
+        : eventId
+          ? 'event'
+          : dialogue
+            ? 'dialogue'
+            : 'explore';
+  useEffect(() => setUiMode(uiMode), [uiMode]);
 
   const interact = useCallback(() => {
     const target = adjacentEntity;
@@ -108,60 +126,76 @@ export function App() {
   };
 
   return (
-    <div className="app">
-      {screen === 'explore' && <HUD state={state} dispatch={dispatch} />}
+    <div className="game-root">
       {screen === 'explore' && (
-        <>
-          <div className="stage">
-            <SceneView
-              location={location}
-              player={state.player}
-              facing={facing}
-              moving={moving}
-              highlightId={adjacentEntity?.id ?? null}
-            />
-            {dialogue && !encounterActive && (
-              <DialogueView
-                state={state}
-                entityId={dialogue.entityId}
-                nodeId={dialogue.nodeId}
-                onChoice={(choice) => {
-                  runEffects(choice.effects);
-                  if (choice.startEncounter) {
-                    setDialogue(null);
-                    dispatch({ type: 'ENCOUNTER_START', npcId: dialogue.entityId });
-                  } else if (choice.next) {
-                    setDialogue({ entityId: dialogue.entityId, nodeId: choice.next });
-                  } else {
-                    setDialogue(null);
-                  }
-                }}
-              />
-            )}
-            {encounterActive && state.activeEncounter && (
-              <EncounterView enc={state.activeEncounter} dispatch={dispatch} />
-            )}
-          </div>
+        <div className="explore-viewport">
+          <SceneView
+            location={location}
+            player={state.player}
+            facing={facing}
+            moving={moving}
+            highlightId={adjacentEntity?.id ?? null}
+          />
+          <ExploreHUD state={state} onNavigate={setScreen} />
           {exploreActive && (
-            <Controls
+            <TouchControls
               onMove={move}
               onInteract={interact}
-              interactLabel={adjacentEntity ? `${adjacentEntity.icon} ${adjacentEntity.name}` : null}
+              interactLabel={adjacentEntity ? `${adjacentEntity.name}` : null}
             />
           )}
-        </>
+        </div>
       )}
-      {screen === 'worldmap' && (
-        <WorldMapScreen state={state} dispatch={dispatch} onExplore={() => setScreen('explore')} />
+
+      {screen !== 'explore' && (
+        <div className="screen-page">
+          {screen === 'worldmap' && (
+            <WorldMapScreen state={state} dispatch={dispatch} onExplore={() => setScreen('explore')} />
+          )}
+          {screen === 'journal' && <JournalScreen state={state} />}
+          {screen === 'profile' && <ProfileScreen state={state} />}
+          {screen === 'career' && <CareerScreen state={state} />}
+          {screen === 'npcs' && <NpcScreen state={state} />}
+          {screen === 'collection' && <CollectionScreen state={state} />}
+          {screen === 'special' && <SpecialScreen />}
+          {screen === 'settings' && <SettingsScreen state={state} dispatch={dispatch} />}
+        </div>
       )}
-      {screen === 'journal' && <JournalScreen state={state} />}
-      {screen === 'profile' && <ProfileScreen state={state} />}
-      {screen === 'career' && <CareerScreen state={state} />}
-      {screen === 'npcs' && <NpcScreen state={state} />}
-      {screen === 'collection' && <CollectionScreen state={state} />}
-      {screen === 'special' && <SpecialScreen />}
-      {screen === 'settings' && <SettingsScreen state={state} dispatch={dispatch} />}
+
       <GlobalNav screen={screen} onNavigate={setScreen} />
+
+      {/* MODE B — 대화 장면 */}
+      {screen === 'explore' && dialogue && !encounterActive && eventId === null && (
+        <DialogueScene
+          state={state}
+          entityId={dialogue.entityId}
+          nodeId={dialogue.nodeId}
+          onClose={() => setDialogue(null)}
+          onChoice={(choice) => {
+            runEffects(choice.effects);
+            if (choice.startEncounter) {
+              setDialogue(null);
+              dispatch({ type: 'ENCOUNTER_START', npcId: dialogue.entityId });
+            } else if (choice.event) {
+              setDialogue(null);
+              setEventId(choice.event);
+            } else if (choice.next) {
+              setDialogue({ entityId: dialogue.entityId, nodeId: choice.next });
+            } else {
+              setDialogue(null);
+            }
+          }}
+        />
+      )}
+
+      {/* MODE C — 심리전 장면 */}
+      {screen === 'explore' && encounterActive && state.activeEncounter && (
+        <EncounterView enc={state.activeEncounter} dispatch={dispatch} />
+      )}
+
+      {/* MODE D — 이벤트 장면 */}
+      {eventId && <EventScene eventId={eventId} onClose={() => setEventId(null)} />}
+
       {isDevMode() && (
         <button className="dev-toggle" onClick={() => setDevOpen((v) => !v)}>
           DEV
@@ -170,30 +204,6 @@ export function App() {
       {isDevMode() && devOpen && (
         <DevPanel state={state} dispatch={dispatch} onClose={() => setDevOpen(false)} />
       )}
-    </div>
-  );
-}
-
-function Controls(props: {
-  onMove: (dx: number, dy: number) => void;
-  onInteract: () => void;
-  interactLabel: string | null;
-}) {
-  return (
-    <div className="controls">
-      <div className="dpad">
-        <button className="dpad-up" onClick={() => props.onMove(0, -1)}>▲</button>
-        <button className="dpad-left" onClick={() => props.onMove(-1, 0)}>◀</button>
-        <button className="dpad-right" onClick={() => props.onMove(1, 0)}>▶</button>
-        <button className="dpad-down" onClick={() => props.onMove(0, 1)}>▼</button>
-      </div>
-      <button
-        className={`interact ${props.interactLabel ? 'active' : ''}`}
-        disabled={!props.interactLabel}
-        onClick={props.onInteract}
-      >
-        {props.interactLabel ? `상호작용 — ${props.interactLabel}` : '가까이 가면 상호작용할 수 있다'}
-      </button>
     </div>
   );
 }
