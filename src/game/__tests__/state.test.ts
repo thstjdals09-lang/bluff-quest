@@ -78,6 +78,43 @@ describe('게임 상태 리듀서', () => {
     expect(moved.player.x).toBe(2);
   });
 
+  it('대결 결과가 포커 커리어에 집계된다', () => {
+    let s = startedEncounter();
+    const treasureIdx = getScenario(s.activeEncounter!).boxes.indexOf('treasure') as BoxIndex;
+    s = reducer(s, { type: 'ENCOUNTER_CHOOSE', box: treasureIdx });
+    expect(s.career).toEqual({ duels: 1, wins: 1, losses: 0, walkaways: 0 });
+    s = reducer(s, { type: 'ENCOUNTER_CLOSE' });
+    // 재도전 후 패배
+    s = reducer(s, { type: 'ENCOUNTER_START', npcId: 'goblin' });
+    s = reducer(s, { type: 'ENCOUNTER_INTRO_DONE' });
+    const wrongIdx = ((getScenario(s.activeEncounter!).boxes.indexOf('treasure') + 1) % 3) as BoxIndex;
+    s = reducer(s, { type: 'ENCOUNTER_CHOOSE', box: wrongIdx });
+    expect(s.career.duels).toBe(2);
+    expect(s.career.losses).toBe(1);
+    s = reducer(s, { type: 'ENCOUNTER_CLOSE' });
+    // 물러남 집계
+    s = reducer(s, { type: 'ENCOUNTER_START', npcId: 'goblin' });
+    s = reducer(s, { type: 'ENCOUNTER_LEAVE' });
+    expect(s.career.walkaways).toBe(1);
+  });
+
+  it('아이템을 제거해도 발견 기록은 컬렉션에 남는다', () => {
+    let s = createInitialState();
+    s = reducer(s, { type: 'ADD_ITEM', itemId: 'old_key' });
+    expect(s.discovered).toContain('old_key');
+    s = reducer(s, { type: 'REMOVE_ITEM', itemId: 'old_key' });
+    expect(s.inventory).not.toContain('old_key');
+    expect(s.discovered).toContain('old_key');
+  });
+
+  it('지역 이동 시 방문 기록이 중복 없이 유지된다', () => {
+    let s = createInitialState();
+    expect(s.visitedRegions).toEqual(['goblin_market']);
+    s = reducer(s, { type: 'GOTO_LOCATION', locationId: 'warehouse', x: 2, y: 4 });
+    s = reducer(s, { type: 'GOTO_LOCATION', locationId: 'market', x: 3, y: 8 });
+    expect(s.visitedRegions).toEqual(['goblin_market']);
+  });
+
   it('창고 해금과 이동, 초대장 획득 흐름이 동작한다', () => {
     let s = createInitialState();
     s = reducer(s, { type: 'ADD_ITEM', itemId: 'old_key' });

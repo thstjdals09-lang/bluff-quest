@@ -19,25 +19,41 @@ export interface SaveMeta {
  */
 export function migrateSave(data: unknown): unknown {
   if (typeof data !== 'object' || data === null) return data;
-  const s = data as { version?: unknown; player?: { location?: unknown } };
-  if (s.version === 1) {
-    const locId = typeof s.player?.location === 'string' && LOCATIONS[s.player.location]
-      ? s.player.location
-      : 'market';
+  let cur = data as Record<string, unknown>;
+
+  // v1 → v2: 지역 그리드 좌표계 변경 — 위치만 시작 지점으로 재배치
+  if (cur.version === 1) {
+    const player = (cur.player ?? {}) as Record<string, unknown>;
+    const locId =
+      typeof player.location === 'string' && LOCATIONS[player.location] ? player.location : 'market';
     const loc = LOCATIONS[locId];
     logEvent('info', '세이브 마이그레이션 v1 → v2: 새 맵 좌표계에 맞춰 플레이어 위치를 재배치했습니다.');
-    return {
-      ...(data as Record<string, unknown>),
+    cur = {
+      ...cur,
       version: 2,
       player: {
-        ...(s.player as Record<string, unknown>),
+        ...player,
         location: loc.id,
         x: loc.playerStart.x,
         y: loc.playerStart.y,
       },
     };
   }
-  return data;
+
+  // v2 → v3: 월드 프레임워크 필드 추가 (기존 진행은 그대로 보존)
+  if (cur.version === 2) {
+    const inventory = Array.isArray(cur.inventory) ? (cur.inventory as string[]) : [];
+    logEvent('info', '세이브 마이그레이션 v2 → v3: 방문 지역·발견 기록·커리어 필드를 추가했습니다.');
+    cur = {
+      ...cur,
+      version: 3,
+      visitedRegions: ['goblin_market'],
+      discovered: [...inventory],
+      career: { duels: 0, wins: 0, losses: 0, walkaways: 0 },
+    };
+  }
+
+  return cur;
 }
 
 /** 세이브 데이터 유효성 검사 — 깨진 데이터로 게임이 멈추지 않게 한다. */
@@ -54,7 +70,11 @@ export function validateSave(data: unknown): data is GameState {
     typeof s.flags === 'object' && s.flags !== null &&
     typeof s.quest === 'object' && s.quest !== null &&
     Array.isArray(s.unlocked) &&
-    typeof s.encounterSeed === 'number'
+    typeof s.encounterSeed === 'number' &&
+    Array.isArray(s.visitedRegions) &&
+    Array.isArray(s.discovered) &&
+    typeof s.career === 'object' && s.career !== null &&
+    typeof s.career.duels === 'number'
   );
 }
 

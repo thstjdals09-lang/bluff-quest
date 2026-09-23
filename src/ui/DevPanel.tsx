@@ -9,6 +9,7 @@ import { getLog, subscribeLog } from '../game/log';
 import { getDevView, setDevView, subscribeDevView } from '../game/devview';
 import { SCENES, projectToScreen } from '../game/content/scenes';
 import { LOCATIONS } from '../game/content/world';
+import { REGIONS, getRegionAccess } from '../game/content/regions';
 
 type Tab = 'state' | 'control' | 'encounter' | 'save' | 'log';
 
@@ -74,6 +75,14 @@ function StateTab({ state }: { state: GameState }) {
       <p>해금: {state.unlocked.join(', ') || '없음'} · 아이템: {state.inventory.join(', ') || '없음'}</p>
       <p>플래그: <code>{JSON.stringify(state.flags)}</code></p>
       <p>NPC: <code>{JSON.stringify(state.npcs)}</code></p>
+      <p>
+        월드: 방문 [{state.visitedRegions.join(', ')}] · 발견 [{state.discovered.join(', ') || '없음'}] ·
+        커리어 {state.career.duels}전 {state.career.wins}승 {state.career.losses}패 {state.career.walkaways}회피
+      </p>
+      <p>
+        지역 해금:{' '}
+        {REGIONS.map((r) => `${r.id}=${getRegionAccess(r.id, state).unlocked ? '해금' : '잠김'}`).join(' · ')}
+      </p>
       <p>대결: <code>{state.activeEncounter ? `${state.activeEncounter.scenarioId} / ${state.activeEncounter.phase}` : '없음'}</code></p>
       <details>
         <summary>전체 상태 JSON</summary>
@@ -125,6 +134,20 @@ function ControlTab({ state, dispatch }: { state: GameState; dispatch: Dispatch<
         <button onClick={() => dispatch({ type: 'UNLOCK', id: 'warehouse' })}>창고 해금</button>
         <button onClick={() => dispatch({ type: 'GOTO_LOCATION', locationId: 'market', x: 3, y: 8 })}>시장으로</button>
         <button onClick={() => dispatch({ type: 'GOTO_LOCATION', locationId: 'warehouse', x: 2, y: 4 })}>창고로</button>
+      </div>
+      <div>
+        <b>월드</b>
+        <button
+          onClick={() => {
+            dispatch({ type: 'ADD_ITEM', itemId: 'invitation' });
+            dispatch({ type: 'SET_FLAG', key: 'found_invitation', value: true });
+          }}
+        >
+          항구 해금(초대장 지급)
+        </button>
+        <button onClick={() => dispatch({ type: 'SET_FLAG', key: 'found_invitation', value: false })}>
+          항구 잠금
+        </button>
       </div>
       <div>
         <b>NPC 상태</b>

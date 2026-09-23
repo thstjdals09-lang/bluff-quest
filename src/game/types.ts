@@ -77,6 +77,14 @@ export interface QuestState {
   completed: string[];
 }
 
+/** 포커 커리어 집계 (실제 대결 결과에서만 누적) */
+export interface CareerStats {
+  duels: number;
+  wins: number;
+  losses: number;
+  walkaways: number;
+}
+
 export interface GameState {
   version: number;
   player: PlayerState;
@@ -88,6 +96,12 @@ export interface GameState {
   activeEncounter: EncounterState | null;
   /** 다음 대결 시나리오 결정에 쓰는 시드 (대결마다 증가) */
   encounterSeed: number;
+  /** v3: 방문한 지역 ID 기록 */
+  visitedRegions: string[];
+  /** v3: 발견(획득 이력) 기록 — 아이템을 사용해도 컬렉션 기록은 남는다 */
+  discovered: string[];
+  /** v3: 포커 커리어 집계 */
+  career: CareerStats;
 }
 
 // ── 위치/맵 ────────────────────────────────────────────────────
@@ -125,9 +139,20 @@ export interface QuestStageDef {
   objective: string;
 }
 
+/** 퀘스트 유형 — 일지에서 구분 표시 */
+export type QuestType =
+  | 'main' // 세계 전체에 걸친 주요 스토리
+  | 'regional' // 특정 지역의 고유한 사건
+  | 'character' // 주요 NPC의 개인적인 이야기
+  | 'discovery' // 탐험·정보 수집으로 발견하는 사건
+  | 'challenge' // 특별한 규칙·조건의 대결
+  | 'cross_region'; // 여러 지역을 잇는 사건
+
 export interface QuestDef {
   id: string;
   name: string;
+  type: QuestType;
+  regionId: string;
   stages: QuestStageDef[];
 }
 

@@ -1,13 +1,15 @@
 import type { GameAction, GameState, NpcRuntime } from './types';
 import { LOCATIONS } from './content/world';
+import { LOCATION_REGION } from './content/regions';
 import { applyInfoAction, chooseBox, getScenario, leaveEncounter, startEncounter } from './encounter';
 import { logEvent } from './log';
 
 /**
  * v1: 최초 프로토타입 (이모지 타일맵 그리드)
  * v2: 비주얼 씬 도입으로 지역 그리드 좌표계 변경 — 위치만 재배치하는 마이그레이션 제공
+ * v3: 월드 프레임워크 — 방문 지역·발견 기록·포커 커리어 필드 추가
  */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 export function createInitialState(): GameState {
   const loc = LOCATIONS.market;
@@ -21,6 +23,9 @@ export function createInitialState(): GameState {
     unlocked: [],
     activeEncounter: null,
     encounterSeed: (Date.now() % 100000) | 0,
+    visitedRegions: ['goblin_market'],
+    discovered: [],
+    career: { duels: 0, wins: 0, losses: 0, walkaways: 0 },
   };
 }
 
@@ -50,7 +55,13 @@ export function reducer(state: GameState, action: GameAction): GameState {
     case 'ADD_ITEM':
       if (state.inventory.includes(action.itemId)) return state;
       logEvent('info', `아이템 획득: ${action.itemId}`);
-      return { ...state, inventory: [...state.inventory, action.itemId] };
+      return {
+        ...state,
+        inventory: [...state.inventory, action.itemId],
+        discovered: state.discovered.includes(action.itemId)
+          ? state.discovered
+          : [...state.discovered, action.itemId],
+      };
     case 'REMOVE_ITEM':
       return { ...state, inventory: state.inventory.filter((i) => i !== action.itemId) };
     case 'ADD_GOLD':
@@ -85,7 +96,16 @@ export function reducer(state: GameState, action: GameAction): GameState {
     }
     case 'GOTO_LOCATION': {
       if (!LOCATIONS[action.locationId]) return state;
-      return { ...state, player: { ...state.player, location: action.locationId, x: action.x, y: action.y } };
+      const regionId = LOCATION_REGION[action.locationId];
+      const visitedRegions =
+        regionId && !state.visitedRegions.includes(regionId)
+          ? [...state.visitedRegions, regionId]
+          : state.visitedRegions;
+      return {
+        ...state,
+        visitedRegions,
+        player: { ...state.player, location: action.locationId, x: action.x, y: action.y },
+      };
     }
     case 'ENCOUNTER_START': {
       if (state.activeEncounter && state.activeEncounter.phase !== 'left' && state.activeEncounter.phase !== 'resolved') {
@@ -116,16 +136,30 @@ export function reducer(state: GameState, action: GameAction): GameState {
       const enc = chooseBox(state.activeEncounter, action.box);
       if (enc.phase !== 'resolved' || enc.result === null) return { ...state, activeEncounter: enc };
       const scenario = getScenario(enc);
-      let next: GameState = { ...state, activeEncounter: enc };
+      const grantItem = (s: GameState, itemId: string): GameState => ({
+        ...s,
+        inventory: s.inventory.includes(itemId) ? s.inventory : [...s.inventory, itemId],
+        discovered: s.discovered.includes(itemId) ? s.discovered : [...s.discovered, itemId],
+      });
+      let next: GameState = {
+        ...state,
+        activeEncounter: enc,
+        career: {
+          ...state.career,
+          duels: state.career.duels + 1,
+          wins: state.career.wins + (enc.result === 'win' ? 1 : 0),
+          losses: state.career.losses + (enc.result === 'lose' ? 1 : 0),
+        },
+      };
       const npc = getNpc(next, scenario.npcId);
       if (enc.result === 'win') {
         // 보상: 낡은 열쇠 + (거짓말을 간파한 경우) 기념품 칩
         if (!next.inventory.includes('old_key') && !next.flags.warehouse_opened) {
-          next = { ...next, inventory: [...next.inventory, 'old_key'] };
+          next = grantItem(next, 'old_key');
         }
         const caught = !scenario.statement.isTrue;
         if (caught && !next.inventory.includes('goblin_tooth_chip')) {
-          next = { ...next, inventory: [...next.inventory, 'goblin_tooth_chip'] };
+          next = grantItem(next, 'goblin_tooth_chip');
         }
         next = {
           ...next,
@@ -150,7 +184,13 @@ export function reducer(state: GameState, action: GameAction): GameState {
     }
     case 'ENCOUNTER_LEAVE': {
       if (!state.activeEncounter) return state;
-      return { ...state, activeEncounter: leaveEncounter(state.activeEncounter) };
+      const left = leaveEncounter(state.activeEncounter);
+      const counted = left.phase === 'left' && state.activeEncounter.phase !== 'left';
+      return {
+        ...state,
+        activeEncounter: left,
+        career: counted ? { ...state.career, walkaways: state.career.walkaways + 1 } : state.career,
+      };
     }
     case 'ENCOUNTER_CLOSE': {
       if (!state.activeEncounter) return state;

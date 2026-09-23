@@ -80,6 +80,8 @@ export const QUESTS: Record<string, QuestDef> = {
   q_invitation: {
     id: 'q_invitation',
     name: '수상한 초대장',
+    type: 'main',
+    regionId: 'goblin_market',
     stages: [
       { id: 'start', title: '시장의 소문', objective: '고블린 시장을 둘러보고 그리즐과 이야기한다.' },
       { id: 'boxes', title: '세 개의 상자', objective: '그리즐의 상자 대결에서 그의 속셈을 읽어낸다.' },
