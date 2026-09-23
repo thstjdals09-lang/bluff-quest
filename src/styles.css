@@ -57,18 +57,115 @@ button.active { border-color: var(--accent); color: var(--accent); }
 .item-icon { font-size: 22px; }
 .item p { margin: 2px 0 0; }
 
-/* Map */
+/* Scene (배경 플레이트 + Y-sort 스프라이트) */
 .stage { position: relative; }
-.map-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 8px; }
-.map-title { font-size: 14px; margin-bottom: 6px; color: var(--dim); }
-.map-grid { display: grid; gap: 1px; }
-.tile { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 3px; }
-.tile.floor { background: var(--floor); }
-.tile.wall { background: var(--wall); }
-.sprite { font-size: clamp(14px, 4.5vw, 24px); line-height: 1; }
-.sprite.player { filter: drop-shadow(0 0 4px var(--accent)); }
-.sprite.highlight { filter: drop-shadow(0 0 6px #fff); animation: pulse 1s infinite alternate; }
-@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.2); } }
+.scene {
+  position: relative;
+  isolation: isolate; /* 내부 Y-sort z-index가 대화/대결 오버레이 위로 새지 않게 격리 */
+  width: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.scene-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+}
+.scene-tint { position: absolute; inset: 0; pointer-events: none; z-index: 1500; }
+.scene-title {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2000;
+  font-size: 12px;
+  color: #f5e7c8;
+  background: rgba(16, 10, 22, 0.65);
+  border: 1px solid rgba(233, 165, 63, 0.5);
+  border-radius: 8px;
+  padding: 4px 10px;
+  text-shadow: 0 1px 2px #000;
+}
+.scene-obj {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.55));
+}
+.scene-obj.lit {
+  filter: drop-shadow(0 0 10px rgba(255, 220, 130, 0.95)) drop-shadow(0 5px 8px rgba(0, 0, 0, 0.55));
+}
+.scene-player {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  transition: left 0.18s linear, top 0.18s linear, height 0.18s linear;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 7px rgba(0, 0, 0, 0.55));
+}
+.scene-player.moving { animation: bob 0.22s ease-in-out; }
+@keyframes bob {
+  0%, 100% { margin-top: 0; }
+  50% { margin-top: -1.2%; }
+}
+.nameplate {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font-size: 11px;
+  color: #ffe9b0;
+  background: rgba(16, 10, 22, 0.75);
+  border: 1px solid rgba(233, 165, 63, 0.6);
+  border-radius: 6px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 1px 2px #000;
+}
+.interact-marker {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font-size: clamp(16px, 5vw, 26px);
+  pointer-events: none;
+  animation: bounce 0.8s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 6px rgba(255, 210, 90, 0.9));
+}
+@keyframes bounce {
+  from { margin-top: 0; }
+  to { margin-top: -1.5%; }
+}
+
+/* 개발 모드 공간 디버그 오버레이 */
+.dev-overlay { position: absolute; inset: 0; z-index: 3000; pointer-events: none; }
+.dev-cell {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  font-size: 8px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-shadow: 0 1px 1px #000;
+}
+.dev-cell.walkable { background: rgba(80, 220, 120, 0.25); }
+.dev-cell.blocked { background: rgba(230, 70, 70, 0.35); }
+.dev-cell.in-range { border-color: #ffd75e; box-shadow: 0 0 6px rgba(255, 215, 94, 0.9) inset; }
+.dev-anchor {
+  position: absolute;
+  transform: translate(-50%, 0);
+  font-family: monospace;
+  font-size: 9px;
+  color: #7fe3ff;
+  text-shadow: 0 1px 2px #000;
+  white-space: nowrap;
+}
+.dev-anchor.player { color: #ffd75e; }
 
 /* Controls */
 .controls { display: flex; gap: 12px; align-items: center; }

@@ -3,7 +3,11 @@ import { LOCATIONS } from './content/world';
 import { applyInfoAction, chooseBox, getScenario, leaveEncounter, startEncounter } from './encounter';
 import { logEvent } from './log';
 
-export const SAVE_VERSION = 1;
+/**
+ * v1: 최초 프로토타입 (이모지 타일맵 그리드)
+ * v2: 비주얼 씬 도입으로 지역 그리드 좌표계 변경 — 위치만 재배치하는 마이그레이션 제공
+ */
+export const SAVE_VERSION = 2;
 
 export function createInitialState(): GameState {
   const loc = LOCATIONS.market;

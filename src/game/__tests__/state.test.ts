@@ -64,20 +64,25 @@ describe('게임 상태 리듀서', () => {
   });
 
   it('벽과 엔티티 타일로는 이동할 수 없다', () => {
-    const s = createInitialState();
-    let cur = s;
-    // 시작 위치 (5,7)에서 아래는 벽(y=8)
-    const blocked = reducer(cur, { type: 'MOVE', dx: 0, dy: 1 });
-    expect(blocked.player.y).toBe(cur.player.y);
-    const moved = reducer(cur, { type: 'MOVE', dx: 0, dy: -1 });
-    expect(moved.player.y).toBe(cur.player.y - 1);
+    let s = createInitialState();
+    // 북쪽 성벽(row 0)으로는 진입 불가
+    s = reducer(s, { type: 'GOTO_LOCATION', locationId: 'market', x: 3, y: 1 });
+    const blockedWall = reducer(s, { type: 'MOVE', dx: 0, dy: -1 });
+    expect(blockedWall.player.y).toBe(1);
+    // 엔티티 타일(그리즐 (0,4))로는 진입 불가
+    s = reducer(s, { type: 'GOTO_LOCATION', locationId: 'market', x: 1, y: 4 });
+    const blockedNpc = reducer(s, { type: 'MOVE', dx: -1, dy: 0 });
+    expect(blockedNpc.player.x).toBe(1);
+    // 일반 바닥으로는 이동 가능
+    const moved = reducer(s, { type: 'MOVE', dx: 1, dy: 0 });
+    expect(moved.player.x).toBe(2);
   });
 
   it('창고 해금과 이동, 초대장 획득 흐름이 동작한다', () => {
     let s = createInitialState();
     s = reducer(s, { type: 'ADD_ITEM', itemId: 'old_key' });
     s = reducer(s, { type: 'UNLOCK', id: 'warehouse' });
-    s = reducer(s, { type: 'GOTO_LOCATION', locationId: 'warehouse', x: 3, y: 3 });
+    s = reducer(s, { type: 'GOTO_LOCATION', locationId: 'warehouse', x: 2, y: 4 });
     expect(s.player.location).toBe('warehouse');
     s = reducer(s, { type: 'ADD_ITEM', itemId: 'invitation' });
     s = reducer(s, { type: 'SET_QUEST_STAGE', stage: 'done' });

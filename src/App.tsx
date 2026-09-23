@@ -4,7 +4,8 @@ import { reducer } from './game/state';
 import { loadGame, saveGame } from './game/save';
 import { LOCATIONS } from './game/content/world';
 import { getInteraction } from './game/content/dialogues';
-import { MapView } from './ui/MapView';
+import type { Facing } from './game/content/scenes';
+import { SceneView } from './ui/SceneView';
 import { DialogueView } from './ui/DialogueView';
 import { EncounterView } from './ui/EncounterView';
 import { HUD } from './ui/HUD';
@@ -23,8 +24,19 @@ export function App() {
   });
   const [dialogue, setDialogue] = useState<{ entityId: string; nodeId: string } | null>(null);
   const [devOpen, setDevOpen] = useState(false);
+  const [facing, setFacing] = useState<Facing>('down');
+  const [moving, setMoving] = useState(false);
   const stateRef = useRef(state);
   stateRef.current = state;
+  const moveTimer = useRef<number | undefined>(undefined);
+
+  const move = useCallback((dx: number, dy: number) => {
+    setFacing(dy < 0 ? 'up' : dy > 0 ? 'down' : dx < 0 ? 'left' : 'right');
+    dispatch({ type: 'MOVE', dx, dy });
+    setMoving(true);
+    window.clearTimeout(moveTimer.current);
+    moveTimer.current = window.setTimeout(() => setMoving(false), 220);
+  }, []);
 
   // 자동 저장: 상태가 바뀔 때마다 + 화면 이탈 시
   useEffect(() => {
@@ -70,7 +82,7 @@ export function App() {
       const dir = map[e.key];
       if (dir) {
         e.preventDefault();
-        dispatch({ type: 'MOVE', dx: dir[0], dy: dir[1] });
+        move(dir[0], dir[1]);
       } else if (e.key === 'e' || e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
         interact();
@@ -78,7 +90,7 @@ export function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [exploreActive, interact]);
+  }, [exploreActive, interact, move]);
 
   const runEffects = (effects: GameAction[] | undefined) => {
     effects?.forEach((a) => dispatch(a));
@@ -88,9 +100,11 @@ export function App() {
     <div className="app">
       <HUD state={state} dispatch={dispatch} />
       <div className="stage">
-        <MapView
+        <SceneView
           location={location}
           player={state.player}
+          facing={facing}
+          moving={moving}
           highlightId={adjacentEntity?.id ?? null}
         />
         {dialogue && !encounterActive && (
@@ -117,7 +131,7 @@ export function App() {
       </div>
       {exploreActive && (
         <Controls
-          onMove={(dx, dy) => dispatch({ type: 'MOVE', dx, dy })}
+          onMove={move}
           onInteract={interact}
           interactLabel={adjacentEntity ? `${adjacentEntity.icon} ${adjacentEntity.name}` : null}
         />
@@ -152,7 +166,7 @@ function Controls(props: {
         disabled={!props.interactLabel}
         onClick={props.onInteract}
       >
-        {props.interactLabel ? `${props.interactLabel} 와(과) 상호작용` : '가까이 가면 상호작용할 수 있다'}
+        {props.interactLabel ? `상호작용 — ${props.interactLabel}` : '가까이 가면 상호작용할 수 있다'}
       </button>
     </div>
   );

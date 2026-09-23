@@ -6,6 +6,9 @@ import { QUESTS, ITEMS } from '../game/content/world';
 import { getScenario, INFO_ACTION_LABELS } from '../game/encounter';
 import { clearSave, exportSave, getSaveMeta, importSave, loadGame, saveGame } from '../game/save';
 import { getLog, subscribeLog } from '../game/log';
+import { getDevView, setDevView, subscribeDevView } from '../game/devview';
+import { SCENES, projectToScreen } from '../game/content/scenes';
+import { LOCATIONS } from '../game/content/world';
 
 type Tab = 'state' | 'control' | 'encounter' | 'save' | 'log';
 
@@ -50,11 +53,21 @@ export function DevPanel(props: {
 }
 
 function StateTab({ state }: { state: GameState }) {
+  const loc = LOCATIONS[state.player.location];
+  const scene = SCENES[state.player.location];
+  const pt = loc && scene
+    ? projectToScreen(scene.projection, loc.layout[0].length, loc.layout.length, state.player.x, state.player.y)
+    : null;
   return (
     <div>
       <p>
-        위치: <b>{state.player.location}</b> ({state.player.x}, {state.player.y}) · 골드 {state.player.gold}
+        위치: <b>{state.player.location}</b> 그리드 ({state.player.x}, {state.player.y}) · 골드 {state.player.gold}
       </p>
+      {pt && (
+        <p>
+          렌더링: 화면 ({pt.x.toFixed(1)}%, {pt.y.toFixed(1)}%) · 스케일 {pt.scale.toFixed(2)} · z-index {pt.z}
+        </p>
+      )}
       <p>
         퀘스트: <b>{state.quest.id}</b> / 단계 <b>{state.quest.stage}</b> · 완료: {state.quest.completed.join(', ') || '없음'}
       </p>
@@ -72,8 +85,17 @@ function StateTab({ state }: { state: GameState }) {
 
 function ControlTab({ state, dispatch }: { state: GameState; dispatch: Dispatch<GameAction> }) {
   const quest = QUESTS[state.quest.id];
+  const [, forceDev] = useState(0);
+  useEffect(() => subscribeDevView(() => forceDev((n) => n + 1)), []);
+  const dv = getDevView();
   return (
     <div className="dev-controls">
+      <div>
+        <b>공간 디버그 오버레이</b>
+        <label><input type="checkbox" checked={dv.grid} onChange={(e) => setDevView({ grid: e.target.checked })} /> 그리드·충돌 영역</label>
+        <label><input type="checkbox" checked={dv.anchors} onChange={(e) => setDevView({ anchors: e.target.checked })} /> 앵커·렌더 순서(z)</label>
+        <label><input type="checkbox" checked={dv.range} onChange={(e) => setDevView({ range: e.target.checked })} /> 상호작용 범위</label>
+      </div>
       <div>
         <b>아이템</b>
         {Object.values(ITEMS).map((item) => (
@@ -101,8 +123,8 @@ function ControlTab({ state, dispatch }: { state: GameState; dispatch: Dispatch<
       <div>
         <b>장소</b>
         <button onClick={() => dispatch({ type: 'UNLOCK', id: 'warehouse' })}>창고 해금</button>
-        <button onClick={() => dispatch({ type: 'GOTO_LOCATION', locationId: 'market', x: 5, y: 7 })}>시장으로</button>
-        <button onClick={() => dispatch({ type: 'GOTO_LOCATION', locationId: 'warehouse', x: 3, y: 3 })}>창고로</button>
+        <button onClick={() => dispatch({ type: 'GOTO_LOCATION', locationId: 'market', x: 3, y: 8 })}>시장으로</button>
+        <button onClick={() => dispatch({ type: 'GOTO_LOCATION', locationId: 'warehouse', x: 2, y: 4 })}>창고로</button>
       </div>
       <div>
         <b>NPC 상태</b>

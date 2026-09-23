@@ -2,46 +2,52 @@ import type { ItemDef, LocationDef, QuestDef } from '../types';
 
 // ── 지역 정의 ──────────────────────────────────────────────────
 
+/**
+ * 논리 그리드: '#'=이동 불가(벽), '.'=이동 가능.
+ * 엔티티가 서 있는 칸도 이동 불가로 처리된다(state.ts isWalkable).
+ * 그리드는 배경 플레이트(scenes.ts)의 길 영역에 원근 투영된다.
+ */
 export const LOCATIONS: Record<string, LocationDef> = {
   market: {
     id: 'market',
     name: '고블린 시장',
     layout: [
-      '############',
-      '#..#....#..#',
-      '#..........#',
-      '#..........#',
-      '#..........#',
-      '#..........#',
-      '#..........#',
-      '#..........#',
-      '############',
+      '#######', // 0: 북쪽 성벽 (창고 문)
+      '.......', // 1
+      '.......', // 2
+      '.......', // 3
+      '.......', // 4 (좌: 그리즐 좌판)
+      '.......', // 5
+      '.......', // 6 (중앙: 상자 더미 / 우: 미라 좌판)
+      '.......', // 7
+      '.......', // 8 (시작 지점)
+      '.......', // 9
     ],
     entities: [
-      { id: 'goblin', kind: 'npc', x: 3, y: 3, icon: '👺', name: '그리즐' },
-      { id: 'mira', kind: 'npc', x: 2, y: 6, icon: '🧙', name: '약초상 미라' },
-      { id: 'board', kind: 'poi', x: 8, y: 2, icon: '📜', name: '시장 게시판' },
-      { id: 'crates', kind: 'poi', x: 9, y: 6, icon: '📦', name: '부서진 상자 더미' },
-      { id: 'warehouse_door', kind: 'poi', x: 10, y: 4, icon: '🚪', name: '잠긴 창고' },
+      { id: 'warehouse_door', kind: 'poi', x: 3, y: 0, icon: '🚪', name: '잠긴 창고' },
+      { id: 'board', kind: 'poi', x: 5, y: 1, icon: '📜', name: '시장 게시판' },
+      { id: 'goblin', kind: 'npc', x: 0, y: 4, icon: '👺', name: '그리즐' },
+      { id: 'crates', kind: 'poi', x: 3, y: 6, icon: '📦', name: '부서진 상자 더미' },
+      { id: 'mira', kind: 'npc', x: 6, y: 6, icon: '🧙', name: '약초상 미라' },
     ],
-    playerStart: { x: 5, y: 7 },
+    playerStart: { x: 3, y: 8 },
   },
   warehouse: {
     id: 'warehouse',
     name: '오래된 창고',
     layout: [
-      '########',
-      '#......#',
-      '#......#',
-      '#......#',
-      '#......#',
-      '########',
+      '#####', // 0: 안쪽 벽
+      '.....', // 1 (궤짝)
+      '.....', // 2
+      '.....', // 3
+      '.....', // 4 (시작 지점)
+      '.....', // 5 (남쪽 출구)
     ],
     entities: [
-      { id: 'chest', kind: 'poi', x: 3, y: 1, icon: '🗝️', name: '먼지 쌓인 궤짝' },
-      { id: 'exit_door', kind: 'poi', x: 6, y: 4, icon: '🚪', name: '시장으로 나가는 문' },
+      { id: 'chest', kind: 'poi', x: 2, y: 1, icon: '🗝️', name: '먼지 쌓인 궤짝' },
+      { id: 'exit_door', kind: 'poi', x: 2, y: 5, icon: '🚪', name: '시장으로 나가는 문' },
     ],
-    playerStart: { x: 3, y: 3 },
+    playerStart: { x: 2, y: 4 },
   },
 };
 

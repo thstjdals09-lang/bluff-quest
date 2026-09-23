@@ -32,7 +32,7 @@ export function getInteraction(entityId: string, state: GameState): DialogueTree
             speaker: '',
             text: '시장으로 돌아간다.',
             choices: [
-              { text: '나가기', effects: [{ type: 'GOTO_LOCATION', locationId: 'market', x: 9, y: 4 }] },
+              { text: '나가기', effects: [{ type: 'GOTO_LOCATION', locationId: 'market', x: 3, y: 1 }] },
               { text: '더 둘러본다' },
             ],
           },
@@ -168,7 +168,7 @@ function cratesInteraction(state: GameState): DialogueTree {
 function warehouseDoorInteraction(state: GameState): DialogueTree {
   if (state.unlocked.includes('warehouse')) {
     return tree('오래된 창고', '창고 문이 열려 있다.', [
-      { text: '들어간다', effects: [{ type: 'GOTO_LOCATION', locationId: 'warehouse', x: 3, y: 3 }] },
+      { text: '들어간다', effects: [{ type: 'GOTO_LOCATION', locationId: 'warehouse', x: 2, y: 4 }] },
       { text: '돌아선다' },
     ]);
   }
@@ -198,7 +198,7 @@ function warehouseDoorInteraction(state: GameState): DialogueTree {
           speaker: '오래된 창고',
           text: '삐걱— 문이 열렸다. 먼지 냄새와 함께 어둑한 실내가 드러난다.',
           choices: [
-            { text: '들어간다', effects: [{ type: 'GOTO_LOCATION', locationId: 'warehouse', x: 3, y: 3 }] },
+            { text: '들어간다', effects: [{ type: 'GOTO_LOCATION', locationId: 'warehouse', x: 2, y: 4 }] },
             { text: '나중에 들어간다' },
           ],
         },

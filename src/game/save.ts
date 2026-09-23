@@ -1,5 +1,6 @@
 import type { GameState } from './types';
 import { SAVE_VERSION, createInitialState } from './state';
+import { LOCATIONS } from './content/world';
 import { logEvent } from './log';
 
 const SAVE_KEY = 'bluff_quest_save';
@@ -9,6 +10,34 @@ const META_KEY = 'bluff_quest_save_meta';
 export interface SaveMeta {
   savedAt: string;
   version: number;
+}
+
+/**
+ * 구버전 세이브 마이그레이션.
+ * v1 → v2: 지역 그리드 좌표계가 바뀌었으므로 플레이어 위치만 해당 지역의
+ * 시작 지점으로 재배치한다. 인벤토리·퀘스트·플래그·대결 상태는 그대로 보존한다.
+ */
+export function migrateSave(data: unknown): unknown {
+  if (typeof data !== 'object' || data === null) return data;
+  const s = data as { version?: unknown; player?: { location?: unknown } };
+  if (s.version === 1) {
+    const locId = typeof s.player?.location === 'string' && LOCATIONS[s.player.location]
+      ? s.player.location
+      : 'market';
+    const loc = LOCATIONS[locId];
+    logEvent('info', '세이브 마이그레이션 v1 → v2: 새 맵 좌표계에 맞춰 플레이어 위치를 재배치했습니다.');
+    return {
+      ...(data as Record<string, unknown>),
+      version: 2,
+      player: {
+        ...(s.player as Record<string, unknown>),
+        location: loc.id,
+        x: loc.playerStart.x,
+        y: loc.playerStart.y,
+      },
+    };
+  }
+  return data;
 }
 
 /** 세이브 데이터 유효성 검사 — 깨진 데이터로 게임이 멈추지 않게 한다. */
@@ -46,7 +75,7 @@ export function loadGame(): { state: GameState; loadedFromSave: boolean } {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return { state: createInitialState(), loadedFromSave: false };
-    const parsed: unknown = JSON.parse(raw);
+    const parsed: unknown = migrateSave(JSON.parse(raw));
     if (!validateSave(parsed)) {
       localStorage.setItem(BACKUP_KEY, raw);
       logEvent('error', '세이브 데이터가 손상되어 백업 후 새 게임을 시작합니다.');
@@ -93,7 +122,7 @@ export function exportSave(): string | null {
 
 export function importSave(json: string): GameState | null {
   try {
-    const parsed: unknown = JSON.parse(json);
+    const parsed: unknown = migrateSave(JSON.parse(json));
     if (!validateSave(parsed)) {
       logEvent('error', '가져온 세이브 데이터가 유효하지 않습니다.');
       return null;
