@@ -10,6 +10,8 @@
 
 import marketBg from '../../assets/market-bg.jpg';
 import warehouseBg from '../../assets/warehouse-bg.jpg';
+import portBg from '../../assets/port-docks-bg.jpg';
+import finStand from '../../assets/fin-stand.png';
 import playerFront from '../../assets/player-front.png';
 import playerBack from '../../assets/player-back.png';
 import playerLeft from '../../assets/player-left.png';
@@ -109,9 +111,31 @@ export const SCENES: Record<string, SceneDef> = {
     playerHeight: 17,
     objects: [
       { entityId: 'chest', sprite: chestSprite, height: 11 },
+      { entityId: 'ledger_scrap', sprite: boardSprite, height: 9, offsetX: 1 },
       // exit_door: 배경 플레이트에 문이 그려져 있어 스프라이트 없이 상호작용 지점만 사용
     ],
     tint: 'rgba(20, 24, 46, 0.25)',
+  },
+  port_docks: {
+    locationId: 'port_docks',
+    bg: portBg,
+    aspect: '2 / 3',
+    bgAspect: 1376 / 2039,
+    cameraZoom: 1.7,
+    projection: {
+      top: { left: 32, right: 63, y: 15 },
+      bottom: { left: 14, right: 82, y: 101 },
+      scaleTop: 0.55,
+      scaleBottom: 1.0,
+    },
+    playerHeight: 17,
+    objects: [
+      // harbor_gate / tavern_door / pier_notice 일부는 배경에 그려져 있어 마커만 사용
+      { entityId: 'pier_notice', sprite: boardSprite, height: 12, offsetX: 2 },
+      { entityId: 'fin', sprite: finStand, height: 22, offsetX: 3, nameplate: true },
+      { entityId: 'cargo', sprite: cratesSprite, height: 14, offsetX: -2 },
+    ],
+    tint: 'rgba(10, 30, 40, 0.12)',
   },
 };
 

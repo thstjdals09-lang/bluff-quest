@@ -3,6 +3,8 @@ import goblinPortrait from '../../assets/goblin-stall.png';
 import miraPortrait from '../../assets/mira-stall.png';
 import goblinBust from '../../assets/grix-bust.png';
 import miraBust from '../../assets/mira-bust.png';
+import finPortrait from '../../assets/fin-stand.png';
+import finBust from '../../assets/fin-bust.png';
 
 /**
  * 주요 NPC 등록부 — 관계 화면과 향후 지역 간 재등장 시스템의 기반.
@@ -34,7 +36,7 @@ export const NPCS: NpcDef[] = [
     portrait: goblinPortrait,
     bust: goblinBust,
     reappears: true,
-    questIds: ['q_invitation'],
+    questIds: ['q_invitation', 'q_black_chip'],
   },
   {
     id: 'mira',
@@ -45,7 +47,18 @@ export const NPCS: NpcDef[] = [
     portrait: miraPortrait,
     bust: miraBust,
     reappears: true,
-    questIds: [],
+    questIds: ['q_mira_past'],
+  },
+  {
+    id: 'fin',
+    name: '정보상 올드 핀',
+    regionId: 'trickster_port',
+    role: '부두의 정보상',
+    desc: '밤의 부두에서 소문과 비밀을 파는 늙은 뱃사람. 손님을 떠보는 것이 직업병이다.',
+    portrait: finPortrait,
+    bust: finBust,
+    reappears: true,
+    questIds: ['q_night_pier'],
   },
 ];
 
@@ -75,14 +88,40 @@ export function getNpcRelation(def: NpcDef, state: GameState): NpcRelationView {
     }
     if (rt.fooledPlayer) records.push('상자 대결에서 그리즐에게 속은 적이 있다.');
     if (state.career.wins > 0) records.push(`상자 대결 승리 ${state.career.wins}회.`);
+    if (state.flags.chip_refused === true) records.push('검은 칩만은 어떤 값에도 팔지 않는 것을 목격했다.');
+    if (state.flags.chip_pressed === true) records.push('칩에 대해 캐물었다가 그리즐의 미움을 샀다.');
+    if (state.flags.chip_done === 'warm') {
+      relation = '묘한 신뢰 — 그리즐이 약속 이야기를 들려줬다';
+      records.push('그리즐이 사라진 친구와의 약속을 직접 이야기해 줬다.');
+    } else if (state.flags.chip_done === 'cold') {
+      relation = '서먹함 — 캐물었던 일을 그리즐이 기억한다';
+      records.push('그리즐은 약속의 존재만 마지못해 인정했다.');
+    }
   }
   if (def.id === 'mira' && rt) {
     if (state.flags.mira_hint === true) {
       relation = '조언자 — 미라의 비결을 들었다';
       records.push('"고블린의 말보다 몸을 보라"는 조언을 들었다.');
     }
+    if (state.flags.mira_slip === true) records.push('미라가 승부판에서 쓰는 말을 무심코 흘리는 것을 들었다.');
+    if (state.flags.mira_admitted === true) {
+      relation = '비밀을 아는 사이 — 미라가 전직 딜러였음을 인정했다';
+      records.push('미라는 한때 여러 지역의 승부를 진행하던 딜러였다.');
+    }
+    if (state.flags.chip_asked_mira === true) records.push('그리즐의 검은 칩에 대해 미라의 이야기를 들었다.');
   }
-  if (met && records.length === 0) records.push('시장에서 대화를 나눴다.');
+  if (def.id === 'fin' && rt) {
+    if (state.flags.fin_bluff_called === true) {
+      relation = '가늠하는 사이 — 핀의 떠보기를 맞받아쳤다';
+      records.push('초대장을 아는 척 떠보던 수작을 간파했다. 핀이 한 수 접었다.');
+    } else if (state.flags.invitation_confirmed_to_fin === true) {
+      relation = '한 수 접힘 — 떠보기에 말려들었다';
+      records.push('핀의 넘겨짚기에 초대장의 존재를 스스로 확인해 주고 말았다.');
+    }
+    if (state.flags.invitation_shown === true) records.push('초대장을 직접 보여줬다. 부두에 소문이 돌지도 모른다.');
+    if (state.flags.night_pier_hint === true) records.push('밤의 부두 비밀 경기에 관한 이야기를 샀다.');
+  }
+  if (met && records.length === 0) records.push('대화를 나눴다.');
 
   return { def, met, meetCount: rt?.meetCount ?? 0, relation, records };
 }

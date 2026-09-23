@@ -53,6 +53,21 @@ export function migrateSave(data: unknown): unknown {
     };
   }
 
+  // v3 → v4: 단일 quest 필드를 다중 quests 맵으로 전환 (진행 그대로 이전)
+  if (cur.version === 3) {
+    const oldQuest = cur.quest as { id?: unknown; stage?: unknown; completed?: unknown } | undefined;
+    const questId = typeof oldQuest?.id === 'string' ? oldQuest.id : 'q_invitation';
+    const stage = typeof oldQuest?.stage === 'string' ? oldQuest.stage : 'start';
+    const completed = Array.isArray(oldQuest?.completed) ? (oldQuest!.completed as string[]) : [];
+    logEvent('info', '세이브 마이그레이션 v3 → v4: 퀘스트 진행을 다중 퀘스트 구조로 이전했습니다.');
+    const { quest: _removed, ...rest } = cur;
+    cur = {
+      ...rest,
+      version: 4,
+      quests: { [questId]: { stage, completed } },
+    };
+  }
+
   return cur;
 }
 
@@ -68,7 +83,7 @@ export function validateSave(data: unknown): data is GameState {
     typeof s.player.y === 'number' &&
     Array.isArray(s.inventory) &&
     typeof s.flags === 'object' && s.flags !== null &&
-    typeof s.quest === 'object' && s.quest !== null &&
+    typeof s.quests === 'object' && s.quests !== null &&
     Array.isArray(s.unlocked) &&
     typeof s.encounterSeed === 'number' &&
     Array.isArray(s.visitedRegions) &&

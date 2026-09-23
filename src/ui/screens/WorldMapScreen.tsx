@@ -3,6 +3,7 @@ import type { Dispatch } from 'react';
 import type { GameAction, GameState } from '../../game/types';
 import {
   CONTENT_STATUS_LABELS,
+  LOCATION_REGION,
   REGIONS,
   getRegionAccess,
   getRegionById,
@@ -28,7 +29,7 @@ export function WorldMapScreen(props: {
         <img src={worldmapImage} alt="세계 지도" draggable={false} />
         {REGIONS.map((r) => {
           const access = getRegionAccess(r.id, state);
-          const current = r.id === 'goblin_market' && state.player.location !== '';
+          const current = LOCATION_REGION[state.player.location] === r.id;
           return (
             <button
               key={r.id}
@@ -98,9 +99,7 @@ function RegionDetail(props: {
   const access = getRegionAccess(region.id, props.state);
   const showImage =
     region.image !== null && (!region.previewRequiresUnlock || access.unlocked);
-  const isCurrent =
-    region.impl === 'playable' &&
-    region.id === 'goblin_market';
+  const canEnter = region.impl === 'playable' && access.unlocked && region.entry !== undefined;
 
   return (
     <div className="sheet-backdrop" onClick={props.onClose}>
@@ -185,8 +184,9 @@ function RegionDetail(props: {
             {region.questIds.map((qid) => {
               const q = QUESTS[qid];
               if (!q) return null;
-              const active = props.state.quest.id === qid;
-              const done = active && props.state.quest.stage === 'done';
+              const progress = props.state.quests[qid] ?? null;
+              const active = progress !== null;
+              const done = progress?.stage === 'done';
               return (
                 <div key={qid} className="content-row">
                   <b>{q.name}</b>
@@ -199,7 +199,7 @@ function RegionDetail(props: {
           </div>
         )}
 
-        {isCurrent && (
+        {canEnter && (
           <button className="primary" onClick={props.onEnter}>
             이 지역 탐험하기
           </button>

@@ -71,8 +71,8 @@ export interface PlayerState {
   gold: number;
 }
 
-export interface QuestState {
-  id: string;
+/** 개별 퀘스트의 진행 상태 (v4: 다중 퀘스트) */
+export interface QuestProgress {
   stage: string;
   completed: string[];
 }
@@ -91,7 +91,8 @@ export interface GameState {
   inventory: string[];
   flags: Record<string, FlagValue>;
   npcs: Record<string, NpcRuntime>;
-  quest: QuestState;
+  /** v4: 진행을 시작한 퀘스트만 담긴다. 없는 id는 '미시작'. */
+  quests: Record<string, QuestProgress>;
   unlocked: string[];
   activeEncounter: EncounterState | null;
   /** 다음 대결 시나리오 결정에 쓰는 시드 (대결마다 증가) */
@@ -185,8 +186,7 @@ export type GameAction =
   | { type: 'ADD_ITEM'; itemId: string }
   | { type: 'REMOVE_ITEM'; itemId: string }
   | { type: 'ADD_GOLD'; amount: number }
-  | { type: 'SET_QUEST_STAGE'; stage: string }
-  | { type: 'COMPLETE_QUEST_STAGE'; stage: string }
+  | { type: 'SET_QUEST_STAGE'; questId: string; stage: string }
   | { type: 'UNLOCK'; id: string }
   | { type: 'NPC_MET'; npcId: string }
   | { type: 'NPC_SET'; npcId: string; patch: Partial<NpcRuntime> }

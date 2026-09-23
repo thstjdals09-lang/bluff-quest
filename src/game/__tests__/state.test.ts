@@ -14,7 +14,7 @@ describe('게임 상태 리듀서', () => {
   it('대결 시작 시 퀘스트가 boxes 단계로 진행된다', () => {
     const s = startedEncounter();
     expect(s.activeEncounter).not.toBeNull();
-    expect(s.quest.stage).toBe('boxes');
+    expect(s.quests.q_invitation.stage).toBe('boxes');
   });
 
   it('진행 중인 대결이 있으면 ENCOUNTER_START가 기존 대결을 보존한다', () => {
@@ -29,7 +29,7 @@ describe('게임 상태 리듀서', () => {
     const won = reducer(s, { type: 'ENCOUNTER_CHOOSE', box: treasureIdx });
     expect(won.activeEncounter?.result).toBe('win');
     expect(won.inventory).toContain('old_key');
-    expect(won.quest.stage).toBe('find_lock');
+    expect(won.quests.q_invitation.stage).toBe('find_lock');
   });
 
   it('패배 시 진행이 막히지 않는다: 플래그가 남고 재도전이 가능하다', () => {
@@ -122,8 +122,8 @@ describe('게임 상태 리듀서', () => {
     s = reducer(s, { type: 'GOTO_LOCATION', locationId: 'warehouse', x: 2, y: 4 });
     expect(s.player.location).toBe('warehouse');
     s = reducer(s, { type: 'ADD_ITEM', itemId: 'invitation' });
-    s = reducer(s, { type: 'SET_QUEST_STAGE', stage: 'done' });
+    s = reducer(s, { type: 'SET_QUEST_STAGE', questId: 'q_invitation', stage: 'done' });
     expect(s.inventory).toContain('invitation');
-    expect(s.quest.stage).toBe('done');
+    expect(s.quests.q_invitation.stage).toBe('done');
   });
 });

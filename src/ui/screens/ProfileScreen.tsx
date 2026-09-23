@@ -1,7 +1,7 @@
 import type { GameState } from '../../game/types';
 import { CHAMPIONS, REGIONS, getRegionById } from '../../game/content/regions';
 import { LOCATION_REGION } from '../../game/content/regions';
-import { QUESTS } from '../../game/content/world';
+import { QUESTS, getTrackedQuest } from '../../game/content/world';
 import playerPortrait from '../../assets/player-front.png';
 
 /** 성장 방향 소개 — 확정된 스탯이 아니므로 수치 없이 방향만 보여준다. */
@@ -16,9 +16,19 @@ const GROWTH_DIRECTIONS = [
 export function ProfileScreen(props: { state: GameState }) {
   const { state } = props;
   const currentRegion = getRegionById(LOCATION_REGION[state.player.location] ?? 'goblin_market');
-  const quest = QUESTS[state.quest.id];
-  const stageIdx = quest ? quest.stages.findIndex((s) => s.id === state.quest.stage) : 0;
-  const progress = quest ? Math.round(((stageIdx + (state.quest.stage === 'done' ? 1 : 0)) / quest.stages.length) * 100) : 0;
+  // 메인 스토리 진행도: 메인 퀘스트들의 완료 단계 비율
+  const mainQuests = Object.values(QUESTS).filter((q) => q.type === 'main');
+  let mainTotal = 0;
+  let mainDone = 0;
+  for (const q of mainQuests) {
+    mainTotal += q.stages.length;
+    const p = state.quests[q.id];
+    if (!p) continue;
+    const idx = q.stages.findIndex((s) => s.id === p.stage);
+    mainDone += Math.max(0, idx) + (p.stage === 'done' ? 1 : 0);
+  }
+  const progress = mainTotal > 0 ? Math.round((mainDone / mainTotal) * 100) : 0;
+  const tracked = getTrackedQuest(state);
 
   const records: string[] = [];
   if (state.career.duels > 0)
@@ -44,17 +54,15 @@ export function ProfileScreen(props: { state: GameState }) {
 
       <div className="card">
         <b>🧭 현재 진행</b>
-        {quest && (
-          <>
-            <p>
-              {quest.name} — {quest.stages[Math.max(0, stageIdx)]?.title}
-            </p>
-            <div className="progress-bar">
-              <div className="progress-fill" style={{ width: `${progress}%` }} />
-            </div>
-            <p className="dim">{progress}% 진행</p>
-          </>
+        {tracked && (
+          <p>
+            {tracked.quest.name} — {tracked.stage.title}
+          </p>
         )}
+        <div className="progress-bar">
+          <div className="progress-fill" style={{ width: `${progress}%` }} />
+        </div>
+        <p className="dim">메인 이야기 {progress}% 진행</p>
       </div>
 
       <div className="card">

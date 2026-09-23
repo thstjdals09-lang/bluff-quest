@@ -8,8 +8,9 @@ import { logEvent } from './log';
  * v1: 최초 프로토타입 (이모지 타일맵 그리드)
  * v2: 비주얼 씬 도입으로 지역 그리드 좌표계 변경 — 위치만 재배치하는 마이그레이션 제공
  * v3: 월드 프레임워크 — 방문 지역·발견 기록·포커 커리어 필드 추가
+ * v4: 스토리 확장 — 단일 quest 필드를 다중 quests 맵으로 전환
  */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 export function createInitialState(): GameState {
   const loc = LOCATIONS.market;
@@ -19,7 +20,7 @@ export function createInitialState(): GameState {
     inventory: [],
     flags: {},
     npcs: {},
-    quest: { id: 'q_invitation', stage: 'start', completed: [] },
+    quests: { q_invitation: { stage: 'start', completed: [] } },
     unlocked: [],
     activeEncounter: null,
     encounterSeed: (Date.now() % 100000) | 0,
@@ -31,6 +32,24 @@ export function createInitialState(): GameState {
 
 function getNpc(state: GameState, npcId: string): NpcRuntime {
   return state.npcs[npcId] ?? { meetCount: 0, fooledPlayer: false, caughtLying: false };
+}
+
+/** 퀘스트 단계 진행 — 진행 항목이 없으면 생성하고, 이전 단계를 완료 목록에 남긴다. */
+export function setQuestStage(state: GameState, questId: string, stage: string): GameState {
+  const cur = state.quests[questId];
+  if (cur?.stage === stage) return state;
+  logEvent('info', `퀘스트 [${questId}] 단계: ${cur?.stage ?? '(시작)'} → ${stage}`);
+  const completed = cur
+    ? cur.completed.includes(cur.stage)
+      ? cur.completed
+      : [...cur.completed, cur.stage]
+    : [];
+  return { ...state, quests: { ...state.quests, [questId]: { stage, completed } } };
+}
+
+/** 퀘스트 진행 조회 헬퍼 — 없으면 null(미시작) */
+export function getQuest(state: GameState, questId: string) {
+  return state.quests[questId] ?? null;
 }
 
 function isWalkable(state: GameState, x: number, y: number): boolean {
@@ -67,21 +86,7 @@ export function reducer(state: GameState, action: GameAction): GameState {
     case 'ADD_GOLD':
       return { ...state, player: { ...state.player, gold: Math.max(0, state.player.gold + action.amount) } };
     case 'SET_QUEST_STAGE':
-      if (state.quest.stage === action.stage) return state;
-      logEvent('info', `퀘스트 단계: ${state.quest.stage} → ${action.stage}`);
-      return {
-        ...state,
-        quest: {
-          ...state.quest,
-          stage: action.stage,
-          completed: state.quest.completed.includes(state.quest.stage)
-            ? state.quest.completed
-            : [...state.quest.completed, state.quest.stage],
-        },
-      };
-    case 'COMPLETE_QUEST_STAGE':
-      if (state.quest.completed.includes(action.stage)) return state;
-      return { ...state, quest: { ...state.quest, completed: [...state.quest.completed, action.stage] } };
+      return setQuestStage(state, action.questId, action.stage);
     case 'UNLOCK':
       if (state.unlocked.includes(action.id)) return state;
       logEvent('info', `해금: ${action.id}`);
@@ -97,15 +102,18 @@ export function reducer(state: GameState, action: GameAction): GameState {
     case 'GOTO_LOCATION': {
       if (!LOCATIONS[action.locationId]) return state;
       const regionId = LOCATION_REGION[action.locationId];
-      const visitedRegions =
-        regionId && !state.visitedRegions.includes(regionId)
-          ? [...state.visitedRegions, regionId]
-          : state.visitedRegions;
-      return {
+      const firstVisit = regionId !== undefined && !state.visitedRegions.includes(regionId);
+      let next: GameState = {
         ...state,
-        visitedRegions,
+        visitedRegions: firstVisit ? [...state.visitedRegions, regionId] : state.visitedRegions,
         player: { ...state.player, location: action.locationId, x: action.x, y: action.y },
       };
+      // 항구 첫 도착: 메인 스토리 다음 장 자동 시작 + 도착 연출 플래그
+      if (regionId === 'trickster_port' && !next.quests.q_night_pier) {
+        next = setQuestStage(next, 'q_night_pier', 'arrive');
+        next = { ...next, flags: { ...next.flags, port_arrived: true } };
+      }
+      return next;
     }
     case 'ENCOUNTER_START': {
       if (state.activeEncounter && state.activeEncounter.phase !== 'left' && state.activeEncounter.phase !== 'resolved') {
@@ -116,12 +124,15 @@ export function reducer(state: GameState, action: GameAction): GameState {
         : null;
       const enc = startEncounter(state.encounterSeed, bonus);
       logEvent('info', `대결 시작: 시나리오=${enc.scenarioId} (seed=${enc.seed})`);
-      return {
+      let started: GameState = {
         ...state,
         activeEncounter: enc,
         encounterSeed: state.encounterSeed + 1,
-        quest: state.quest.stage === 'start' ? { ...state.quest, stage: 'boxes', completed: [...state.quest.completed, 'start'] } : state.quest,
       };
+      if (started.quests.q_invitation?.stage === 'start') {
+        started = setQuestStage(started, 'q_invitation', 'boxes');
+      }
+      return started;
     }
     case 'ENCOUNTER_INTRO_DONE': {
       if (!state.activeEncounter || state.activeEncounter.phase !== 'intro') return state;
@@ -166,11 +177,9 @@ export function reducer(state: GameState, action: GameAction): GameState {
           player: { ...next.player, gold: next.player.gold + 5 },
           npcs: { ...next.npcs, [scenario.npcId]: { ...npc, caughtLying: npc.caughtLying || caught } },
         };
-        if (next.quest.stage === 'boxes' || next.quest.stage === 'start') {
-          next = {
-            ...next,
-            quest: { ...next.quest, stage: 'find_lock', completed: [...next.quest.completed, 'boxes'] },
-          };
+        const invStage = next.quests.q_invitation?.stage;
+        if (invStage === 'boxes' || invStage === 'start') {
+          next = setQuestStage(next, 'q_invitation', 'find_lock');
         }
       } else {
         next = {

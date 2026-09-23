@@ -1,6 +1,7 @@
 import type { GameState, QuestType } from '../../game/types';
 import { QUESTS } from '../../game/content/world';
 import { getRegionById } from '../../game/content/regions';
+import { RECORD_KIND_LABELS, getDiscoveredRecords } from '../../game/content/records';
 
 const TYPE_LABELS: Record<QuestType, { name: string; desc: string }> = {
   main: { name: '메인 퀘스트', desc: '세계 전체에 걸친 주요 스토리.' },
@@ -11,17 +12,33 @@ const TYPE_LABELS: Record<QuestType, { name: string; desc: string }> = {
   cross_region: { name: '월경 사건', desc: '여러 지역을 이동하며 진행하는 사건.' },
 };
 
-const TYPE_ORDER: QuestType[] = ['main', 'regional', 'character', 'discovery', 'challenge', 'cross_region'];
+const TYPE_ORDER: QuestType[] = ['main', 'character', 'regional', 'discovery', 'challenge', 'cross_region'];
 
-/** 퀘스트 일지 — 유형별로 구분하며, 실제 존재하는 퀘스트만 표시한다. */
+/** 퀘스트 일지 — 유형별 진행 상태 + 수집한 정보(사실/주장/소문/추정 구분). */
 export function JournalScreen(props: { state: GameState }) {
   const { state } = props;
   const allQuests = Object.values(QUESTS);
+  const records = getDiscoveredRecords(state);
 
   return (
     <div className="screen">
       <h2 className="screen-title">📜 모험 일지</h2>
-      <p className="screen-sub">지금까지의 사건과 앞으로의 실마리.</p>
+      <p className="screen-sub">지금까지의 사건과 실마리.</p>
+
+      <div className="card">
+        <b>🔎 수집한 정보 ({records.length})</b>
+        <p className="dim">확인된 사실과 누군가의 주장은 다르다. 무엇을 믿을지는 당신의 몫이다.</p>
+        {records.length === 0 ? (
+          <p className="dim empty-line">아직 기록된 정보가 없다. 세계를 조사해 보자.</p>
+        ) : (
+          records.map((r, i) => (
+            <p key={i} className="record-line">
+              <span className={`chip record-${r.kind}`}>{RECORD_KIND_LABELS[r.kind]}</span> {r.text}
+            </p>
+          ))
+        )}
+      </div>
+
       {TYPE_ORDER.map((type) => {
         const quests = allQuests.filter((q) => q.type === type);
         return (
@@ -32,31 +49,32 @@ export function JournalScreen(props: { state: GameState }) {
               <p className="dim empty-line">아직 기록된 사건이 없다. 모험이 계속되면 채워진다.</p>
             ) : (
               quests.map((q) => {
-                const active = state.quest.id === q.id;
+                const progress = state.quests[q.id] ?? null;
                 const region = getRegionById(q.regionId);
-                const stageIdx = active ? q.stages.findIndex((s) => s.id === state.quest.stage) : -1;
-                const done = active && state.quest.stage === 'done';
+                const done = progress?.stage === 'done';
                 return (
                   <div key={q.id} className="quest-entry">
                     <div className="content-row">
                       <b>{q.name}</b>
                       <span className={`chip ${done ? 'ok' : ''}`}>
-                        {done ? '완료' : active ? '진행 중' : '미시작'}
+                        {done ? '완료' : progress ? '진행 중' : '미시작'}
                       </span>
                     </div>
                     {region && <p className="dim">📍 {region.name}</p>}
-                    {active && (
+                    {progress && (
                       <div className="stage-list">
-                        {q.stages.map((s, i) => {
-                          const isPast = state.quest.completed.includes(s.id) || (done && i < q.stages.length);
-                          const isCurrent = !done && s.id === state.quest.stage;
+                        {q.stages.map((s) => {
+                          const isPast = progress.completed.includes(s.id) || (done && s.id === 'done');
+                          const isCurrent = !done && s.id === progress.stage;
                           return (
                             <div
                               key={s.id}
                               className={`stage-line ${isPast && !isCurrent ? 'past' : ''} ${isCurrent ? 'current' : ''}`}
                             >
                               {isCurrent ? '◉' : isPast ? '✓' : '○'} <b>{s.title}</b>
-                              {(isCurrent || i === stageIdx) && <span className="dim"> — {s.objective}</span>}
+                              {(isCurrent || (done && s.id === 'done')) && (
+                                <span className="dim"> — {s.objective}</span>
+                              )}
                             </div>
                           );
                         })}

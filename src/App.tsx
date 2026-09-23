@@ -94,6 +94,14 @@ export function App() {
             : 'explore';
   useEffect(() => setUiMode(uiMode), [uiMode]);
 
+  // MODE D: 항구 첫 도착 연출 (도착 플래그 → 1회 이벤트)
+  useEffect(() => {
+    if (state.flags.port_arrived === true && state.flags.port_arrival_seen !== true) {
+      setEventId('port_arrival');
+      dispatch({ type: 'SET_FLAG', key: 'port_arrival_seen', value: true });
+    }
+  }, [state.flags.port_arrived, state.flags.port_arrival_seen]);
+
   const interact = useCallback(() => {
     const target = adjacentEntity;
     if (!target) return;

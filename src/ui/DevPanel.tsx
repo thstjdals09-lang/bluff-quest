@@ -83,7 +83,8 @@ function StateTab({ state }: { state: GameState }) {
         </p>
       )}
       <p>
-        퀘스트: <b>{state.quest.id}</b> / 단계 <b>{state.quest.stage}</b> · 완료: {state.quest.completed.join(', ') || '없음'}
+        퀘스트:{' '}
+        {Object.entries(state.quests).map(([id, p]) => `${id}=${p.stage}`).join(' · ') || '없음'}
       </p>
       <p>해금: {state.unlocked.join(', ') || '없음'} · 아이템: {state.inventory.join(', ') || '없음'}</p>
       <p>플래그: <code>{JSON.stringify(state.flags)}</code></p>
@@ -106,7 +107,6 @@ function StateTab({ state }: { state: GameState }) {
 }
 
 function ControlTab({ state, dispatch }: { state: GameState; dispatch: Dispatch<GameAction> }) {
-  const quest = QUESTS[state.quest.id];
   const [, forceDev] = useState(0);
   useEffect(() => subscribeDevView(() => forceDev((n) => n + 1)), []);
   const dv = getDevView();
@@ -130,23 +130,58 @@ function ControlTab({ state, dispatch }: { state: GameState; dispatch: Dispatch<
           </span>
         ))}
       </div>
+      {Object.values(QUESTS).map((q) => (
+        <div key={q.id}>
+          <b>퀘스트 — {q.name} ({state.quests[q.id]?.stage ?? '미시작'})</b>
+          {q.stages.map((s) => (
+            <button
+              key={s.id}
+              className={state.quests[q.id]?.stage === s.id ? 'active' : ''}
+              onClick={() => dispatch({ type: 'SET_QUEST_STAGE', questId: q.id, stage: s.id })}
+            >
+              {s.id}
+            </button>
+          ))}
+        </div>
+      ))}
       <div>
-        <b>퀘스트 단계</b>
-        {quest.stages.map((s) => (
+        <b>스토리 플래그</b>
+        {(
+          [
+            'chip_seen', 'chip_refused', 'chip_pressed', 'chip_asked_mira', 'ledger_clue',
+            'mira_slip', 'mira_admitted', 'pier_rumor', 'fin_bluff_called', 'night_pier_hint', 'invitation_shown',
+          ] as const
+        ).map((key) => (
           <button
-            key={s.id}
-            className={state.quest.stage === s.id ? 'active' : ''}
-            onClick={() => dispatch({ type: 'SET_QUEST_STAGE', stage: s.id })}
+            key={key}
+            className={state.flags[key] !== undefined && state.flags[key] !== false ? 'active' : ''}
+            onClick={() =>
+              dispatch({
+                type: 'SET_FLAG',
+                key,
+                value: state.flags[key] === true ? false : true,
+              })
+            }
           >
-            {s.id}
+            {key}
           </button>
         ))}
+        <button
+          onClick={() => {
+            dispatch({ type: 'SET_FLAG', key: 'chip_done', value: false });
+            dispatch({ type: 'SET_FLAG', key: 'chip_pressed', value: false });
+            dispatch({ type: 'SET_FLAG', key: 'chip_asked_mira', value: false });
+          }}
+        >
+          칩 사건 초기화
+        </button>
       </div>
       <div>
         <b>장소</b>
         <button onClick={() => dispatch({ type: 'UNLOCK', id: 'warehouse' })}>창고 해금</button>
         <button onClick={() => dispatch({ type: 'GOTO_LOCATION', locationId: 'market', x: 2, y: 6 })}>시장으로</button>
         <button onClick={() => dispatch({ type: 'GOTO_LOCATION', locationId: 'warehouse', x: 2, y: 4 })}>창고로</button>
+        <button onClick={() => dispatch({ type: 'GOTO_LOCATION', locationId: 'port_docks', x: 3, y: 6 })}>항구로</button>
       </div>
       <div>
         <b>월드</b>
@@ -154,6 +189,7 @@ function ControlTab({ state, dispatch }: { state: GameState; dispatch: Dispatch<
           onClick={() => {
             dispatch({ type: 'ADD_ITEM', itemId: 'invitation' });
             dispatch({ type: 'SET_FLAG', key: 'found_invitation', value: true });
+            dispatch({ type: 'SET_QUEST_STAGE', questId: 'q_invitation', stage: 'done' });
           }}
         >
           항구 해금(초대장 지급)

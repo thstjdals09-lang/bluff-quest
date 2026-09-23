@@ -38,10 +38,11 @@ describe('세이브 시스템', () => {
     };
     const restored = importSave(JSON.stringify(v1));
     expect(restored).not.toBeNull();
-    expect(restored!.version).toBe(3);
+    expect(restored!.version).toBe(4);
     expect(restored!.inventory).toContain('old_key');
     expect(restored!.player.gold).toBe(15);
-    expect(restored!.quest.stage).toBe('find_lock');
+    // v3→v4: 단일 quest → quests 맵 이전
+    expect(restored!.quests.q_invitation.stage).toBe('find_lock');
     // v1→v2: 좌표계 변경으로 위치는 시작 지점 재배치
     expect(restored!.player.x).toBe(LOCATIONS.market.playerStart.x);
     expect(restored!.player.y).toBe(LOCATIONS.market.playerStart.y);
@@ -66,12 +67,35 @@ describe('세이브 시스템', () => {
     };
     const restored = importSave(JSON.stringify(v2));
     expect(restored).not.toBeNull();
-    expect(restored!.version).toBe(3);
-    // v2→v3에서는 위치를 건드리지 않는다
+    expect(restored!.version).toBe(4);
+    // v2→v3→v4에서는 위치를 건드리지 않는다
     expect(restored!.player.location).toBe('warehouse');
     expect(restored!.player.x).toBe(2);
     expect(restored!.discovered).toEqual(['old_key', 'invitation']);
     expect(restored!.unlocked).toContain('warehouse');
+    // 완료된 초대장 퀘스트가 그대로 이전된다
+    expect(restored!.quests.q_invitation.stage).toBe('done');
+    expect(restored!.quests.q_invitation.completed).toContain('open_warehouse');
+  });
+
+  it('v3(Phase 4 배포판) 세이브는 v4로 이전되며 신규 콘텐츠에 접근할 수 있다', () => {
+    const base = createInitialState();
+    const v3 = {
+      ...base,
+      version: 3,
+      quest: { id: 'q_invitation', stage: 'done', completed: ['start', 'boxes', 'find_lock', 'open_warehouse'] },
+      flags: { found_invitation: true, warehouse_opened: true },
+      inventory: ['old_key', 'invitation', 'goblin_tooth_chip'],
+    } as unknown as Record<string, unknown>;
+    delete (v3 as Record<string, unknown>).quests;
+    const restored = importSave(JSON.stringify(v3));
+    expect(restored).not.toBeNull();
+    expect(restored!.version).toBe(4);
+    expect(restored!.quests.q_invitation.stage).toBe('done');
+    // 초대장 보유 → 항구 해금 유지 → 항구 이동 시 신규 메인 퀘스트 자동 시작
+    const atPort = reducer(restored!, { type: 'GOTO_LOCATION', locationId: 'port_docks', x: 3, y: 8 });
+    expect(atPort.quests.q_night_pier.stage).toBe('arrive');
+    expect(atPort.visitedRegions).toContain('trickster_port');
   });
 
   it('손상된 데이터는 거부된다', () => {

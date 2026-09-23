@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { GameState } from '../game/types';
 import type { ScreenId } from './GlobalNav';
-import { ITEMS, QUESTS } from '../game/content/world';
+import { ITEMS, getTrackedQuest } from '../game/content/world';
 
 /**
  * 탐험 화면(MODE A) 위에 겹쳐지는 인게임 HUD.
@@ -10,14 +10,15 @@ import { ITEMS, QUESTS } from '../game/content/world';
 export function ExploreHUD(props: { state: GameState; onNavigate: (s: ScreenId) => void }) {
   const { state } = props;
   const [bagOpen, setBagOpen] = useState(false);
-  const quest = QUESTS[state.quest.id];
-  const stage = quest?.stages.find((s) => s.id === state.quest.stage);
+  const tracked = getTrackedQuest(state);
+  const quest = tracked?.quest;
+  const stage = tracked?.stage;
 
   return (
     <>
       <div className="hud-top-left">
         <div className="hud-gold-pill">💰 {state.player.gold}</div>
-        {stage && (
+        {quest && stage && (
           <button className="hud-quest-pill" onClick={() => props.onNavigate('journal')}>
             <span className="hud-quest-mark">❗</span>
             <span>

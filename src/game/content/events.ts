@@ -29,6 +29,22 @@ export const EVENTS: Record<string, EventDef> = {
   },
 };
 
+EVENTS.port_arrival = {
+  id: 'port_arrival',
+  icon: '⚓',
+  title: '사기꾼들의 항구',
+  text: '소금기 밴 바람, 삐걱대는 밧줄, 물 위에 흔들리는 등불.\n\n카드 문양 돛을 단 배들이 어둠 속에 정박해 있다. 여기서는 모든 거래에 이면이 있다고 했다.\n\n초대장이 가리킨 곳 — 밤의 부두다.',
+  footnote: '새로운 지역에 도착했다. 메인 이야기가 이어진다.',
+};
+
+EVENTS.invitation_back = {
+  id: 'invitation_back',
+  icon: '🂠',
+  title: '초대장의 뒷면',
+  text: '등불에 비추자, 초대장 뒷면에 감춰져 있던 문구가 천천히 떠오른다.\n\n"당신에게 아직 끝나지 않은 승부가 있습니다."\n\n받는 사람의 이름은 어디에도 없다.',
+  footnote: '사실 확인: 초대장은 특정한 이름이 아니라 \'자리\'에 보내진 것이다.',
+};
+
 export function getEventById(id: string): EventDef | undefined {
   return EVENTS[id];
 }

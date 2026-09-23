@@ -112,7 +112,7 @@ export const REGIONS: RegionDef[] = [
       { name: '시장 챔피언전', desc: '시장의 왕과의 최후의 흥정.', status: 'coming_soon' },
       { name: '고블린 포커 클럽', desc: '시장 뒷골목의 소규모 클럽.', status: 'coming_soon' },
     ],
-    questIds: ['q_invitation'],
+    questIds: ['q_invitation', 'q_black_chip', 'q_mira_past'],
     entry: { locationId: 'market', x: 2, y: 6 },
   },
   {
@@ -122,18 +122,20 @@ export const REGIONS: RegionDef[] = [
     tagline: '위험을 사고 보상을 파는 곳',
     themes: ['위험과 보상', '해적', '보물', '협상'],
     desc: '카드 문양 돛을 단 해적선들이 드나드는 무법의 항구. 모든 거래에는 이면이 있고, 모든 보물 지도에는 함정이 있다. 밤의 부두에서는 비밀 경기가 열린다고 한다.',
-    impl: 'preview',
+    impl: 'playable',
     image: portImage,
     previewRequiresUnlock: true,
     marker: { x: 76, y: 71 },
     champion: CHAMPIONS.champ_port,
     contents: [
-      { name: '항구 입구', desc: '부두와 선술집 거리의 풍경.', status: 'preview' },
+      { name: '밤의 부두 탐험', desc: '보드워크를 걸으며 항구의 인물·장소와 상호작용한다.', status: 'playable' },
+      { name: '정보상 올드 핀', desc: '값을 부르는 자 — 무엇을 걸고 무엇을 숨길지 판단하는 거래.', status: 'playable' },
       { name: '밤의 부두 — 비밀 경기', desc: '초대장이 가리키는 그 장소.', status: 'coming_soon' },
-      { name: '보물 협상', desc: '수상한 상인들과의 거래.', status: 'coming_soon' },
+      { name: '선술집', desc: '해적들의 소란스러운 승부가 벌어지는 곳.', status: 'coming_soon' },
       { name: '챔피언전', desc: '해적 선장과의 승부.', status: 'coming_soon' },
     ],
-    questIds: [],
+    questIds: ['q_night_pier'],
+    entry: { locationId: 'port_docks', x: 3, y: 6 },
   },
   {
     id: 'ghost_casino',
@@ -195,6 +197,7 @@ export function getRegionById(id: string): RegionDef | undefined {
 export const LOCATION_REGION: Record<string, string> = {
   market: 'goblin_market',
   warehouse: 'goblin_market',
+  port_docks: 'trickster_port',
 };
 
 export interface RegionAccess {
