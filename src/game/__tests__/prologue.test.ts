@@ -1,8 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { GameState } from '../types';
-import { createInitialState, createNewAdventureState, reducer } from '../state';
+import { SAVE_VERSION, createInitialState, createNewAdventureState, reducer } from '../state';
 import { getInteraction, resolveDialogueNode } from '../content/dialogues';
 import { importSave } from '../save';
+
+/** 플레이어를 특정 칸에 세운다 (출입구는 인접해야 사용 가능) */
+function standAt(state: GameState, x: number, y: number): GameState {
+  return { ...state, player: { ...state.player, x, y } };
+}
 
 /** 대화 선택지의 효과를 리듀서에 적용하는 테스트 헬퍼 */
 function choose(state: GameState, entityId: string, textIncludes: string, nodeId?: string): GameState {
@@ -34,8 +39,10 @@ describe('프롤로그 (새 모험)', () => {
     expect(s.flags.gate_merchant_answer).toBe('told');
     expect(s.quests.q_prologue.stage).toBe('merchant');
 
+    s = standAt(s, 2, 1);
     s = choose(s, 'market_gate', '시장으로 들어간다');
     expect(s.player.location).toBe('market');
+    expect(s.visitedLocations).toContain('market');
     expect(s.quests.q_prologue.stage).toBe('done');
     expect(s.flags.prologue_done).toBe(true);
     // 기존 메인 퀘스트는 그대로 시작 상태 — 첫 대결은 강제되지 않는다
@@ -69,6 +76,7 @@ describe('프롤로그 (새 모험)', () => {
     // 카드 없이 상인은 평범한 호객만 한다
     const merchant = getInteraction('gate_merchant', s);
     expect(merchant.nodes[merchant.entry].text).not.toContain('어디서 났어');
+    s = standAt(s, 2, 1);
     s = choose(s, 'market_gate', '시장으로 들어간다');
     expect(s.player.location).toBe('market');
     expect(s.flags.prologue_done).toBe(true);
@@ -79,7 +87,8 @@ describe('프롤로그 (새 모험)', () => {
     let s = createInitialState('기존 여행자');
     delete (s.quests as Record<string, unknown>).q_prologue;
     expect(s.inventory).not.toContain('old_spade_card');
-    s = choose(s, 'market_exit', '바깥 길로');
+    s = standAt(s, 3, 8);
+    s = choose(s, 'market_exit', '이동한다');
     expect(s.player.location).toBe('market_road');
     s = choose(s, 'old_card', '주워서');
     expect(s.inventory).toContain('old_spade_card');
@@ -97,7 +106,7 @@ describe('프롤로그 (새 모험)', () => {
     };
     const restored = importSave(JSON.stringify(v4));
     expect(restored).not.toBeNull();
-    expect(restored!.version).toBe(5);
+    expect(restored!.version).toBe(SAVE_VERSION);
     expect(restored!.player.name).toBe('이름 없는 승부사');
     expect(restored!.player.location).toBe('port_docks');
     expect(restored!.quests.q_night_pier.stage).toBe('wager');

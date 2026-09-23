@@ -1,6 +1,6 @@
 import type { GameAction, GameState, NpcRuntime } from './types';
 import { LOCATIONS } from './content/world';
-import { LOCATION_REGION } from './content/regions';
+import { getExit, isExitOpen } from './content/navigation';
 import { applyInfoAction, chooseBox, getScenario, leaveEncounter, startEncounter } from './encounter';
 import { logEvent } from './log';
 
@@ -10,8 +10,9 @@ import { logEvent } from './log';
  * v3: 월드 프레임워크 — 방문 지역·발견 기록·포커 커리어 필드 추가
  * v4: 스토리 확장 — 단일 quest 필드를 다중 quests 맵으로 전환
  * v5: 타이틀·프롤로그 — 플레이어 이름 추가
+ * v6: 장소 연결 구조 — 장소 방문 기록(visitedLocations) 추가
  */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 export function createInitialState(name = '이름 없는 승부사'): GameState {
   const loc = LOCATIONS.market;
@@ -28,6 +29,7 @@ export function createInitialState(name = '이름 없는 승부사'): GameState 
     visitedRegions: ['goblin_market'],
     discovered: [],
     career: { duels: 0, wins: 0, losses: 0, walkaways: 0 },
+    visitedLocations: [loc.id],
   };
 }
 
@@ -38,6 +40,7 @@ export function createNewAdventureState(name: string): GameState {
   return {
     ...base,
     player: { ...base.player, location: road.id, x: road.playerStart.x, y: road.playerStart.y },
+    visitedLocations: [road.id],
     quests: {
       q_prologue: { stage: 'road', completed: [] },
       q_invitation: { stage: 'start', completed: [] },
@@ -65,6 +68,37 @@ export function setQuestStage(state: GameState, questId: string, stage: string):
 /** 퀘스트 진행 조회 헬퍼 — 없으면 null(미시작) */
 export function getQuest(state: GameState, questId: string) {
   return state.quests[questId] ?? null;
+}
+
+function isFreeTileIn(locationId: string, x: number, y: number): boolean {
+  const loc = LOCATIONS[locationId];
+  const row = loc?.layout[y];
+  if (!row || row[x] !== '.') return false;
+  return !loc.entities.some((e) => e.x === x && e.y === y);
+}
+
+/** 장소 이동 — 방문 기록을 남기고, 막힌 좌표로의 이동은 해당 장소 시작 좌표로 보정한다. */
+function gotoLocation(state: GameState, locationId: string, x: number, y: number): GameState {
+  const loc = LOCATIONS[locationId];
+  if (!loc) return state;
+  const safe = isFreeTileIn(locationId, x, y) ? { x, y } : { ...loc.playerStart };
+  const regionId = loc.regionId;
+  let next: GameState = {
+    ...state,
+    visitedRegions: state.visitedRegions.includes(regionId)
+      ? state.visitedRegions
+      : [...state.visitedRegions, regionId],
+    visitedLocations: state.visitedLocations.includes(locationId)
+      ? state.visitedLocations
+      : [...state.visitedLocations, locationId],
+    player: { ...state.player, location: locationId, x: safe.x, y: safe.y },
+  };
+  // 항구 첫 도착: 메인 스토리 다음 장 자동 시작 + 도착 연출 플래그
+  if (regionId === 'trickster_port' && !next.quests.q_night_pier) {
+    next = setQuestStage(next, 'q_night_pier', 'arrive');
+    next = { ...next, flags: { ...next.flags, port_arrived: true } };
+  }
+  return next;
 }
 
 function isWalkable(state: GameState, x: number, y: number): boolean {
@@ -114,21 +148,16 @@ export function reducer(state: GameState, action: GameAction): GameState {
       const npc = getNpc(state, action.npcId);
       return { ...state, npcs: { ...state.npcs, [action.npcId]: { ...npc, ...action.patch } } };
     }
-    case 'GOTO_LOCATION': {
-      if (!LOCATIONS[action.locationId]) return state;
-      const regionId = LOCATION_REGION[action.locationId];
-      const firstVisit = regionId !== undefined && !state.visitedRegions.includes(regionId);
-      let next: GameState = {
-        ...state,
-        visitedRegions: firstVisit ? [...state.visitedRegions, regionId] : state.visitedRegions,
-        player: { ...state.player, location: action.locationId, x: action.x, y: action.y },
-      };
-      // 항구 첫 도착: 메인 스토리 다음 장 자동 시작 + 도착 연출 플래그
-      if (regionId === 'trickster_port' && !next.quests.q_night_pier) {
-        next = setQuestStage(next, 'q_night_pier', 'arrive');
-        next = { ...next, flags: { ...next.flags, port_arrived: true } };
-      }
-      return next;
+    case 'GOTO_LOCATION':
+      return gotoLocation(state, action.locationId, action.x, action.y);
+    case 'USE_EXIT': {
+      const exit = getExit(state.player.location, action.entityId);
+      const ent = LOCATIONS[state.player.location]?.entities.find((e) => e.id === action.entityId);
+      if (!exit || !ent) return state;
+      const adjacent = Math.abs(ent.x - state.player.x) + Math.abs(ent.y - state.player.y) === 1;
+      if (!adjacent || !isExitOpen(exit, state)) return state;
+      logEvent('info', `장소 이동: ${state.player.location} → ${exit.to} (${action.entityId})`);
+      return gotoLocation(state, exit.to, exit.arrive.x, exit.arrive.y);
     }
     case 'ENCOUNTER_START': {
       if (state.activeEncounter && state.activeEncounter.phase !== 'left' && state.activeEncounter.phase !== 'resolved') {

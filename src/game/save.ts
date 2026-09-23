@@ -88,7 +88,36 @@ export function migrateSave(data: unknown): unknown {
     };
   }
 
+  // v5 → v6: 장소 방문 기록 추가 — 기존 진행에서 방문이 확실한 장소만 추정해 채운다
+  if (cur.version === 5) {
+    cur = { ...cur, version: 6, visitedLocations: inferVisitedLocations(cur) };
+    logEvent('info', '세이브 마이그레이션 v5 → v6: 장소 방문 기록을 추가했습니다.');
+  }
+
   return cur;
+}
+
+/**
+ * v6 이전 세이브의 장소 방문 기록 추정.
+ * 확실한 근거가 있는 장소만 기록한다 (근거 없는 장소를 방문으로 표시하지 않음).
+ */
+function inferVisitedLocations(s: Record<string, unknown>): string[] {
+  const visited = new Set<string>();
+  const player = (s.player ?? {}) as { location?: unknown };
+  const flags = (s.flags ?? {}) as Record<string, unknown>;
+  const quests = (s.quests ?? {}) as Record<string, { stage?: unknown } | undefined>;
+  const regions = Array.isArray(s.visitedRegions) ? (s.visitedRegions as string[]) : [];
+  if (typeof player.location === 'string' && LOCATIONS[player.location]) visited.add(player.location);
+  // 프롤로그 도중인 새 모험을 제외하면, 모든 기존 플레이어는 입구 장터에서 시작했다
+  const inPrologue = quests.q_prologue !== undefined && quests.q_prologue?.stage !== 'done';
+  if (!inPrologue) visited.add('market');
+  if (quests.q_prologue !== undefined || flags.prologue_card === true) visited.add('market_road');
+  // 창고: 궤짝의 초대장을 집었다면 들어간 것이 확실하다 (해금만으로는 방문 근거가 아님)
+  if (flags.found_invitation === true && (s.unlocked as string[] | undefined)?.includes('warehouse')) {
+    visited.add('warehouse');
+  }
+  if (regions.includes('trickster_port')) visited.add('port_docks');
+  return [...visited];
 }
 
 /** 세이브 데이터 유효성 검사 — 깨진 데이터로 게임이 멈추지 않게 한다. */
@@ -109,6 +138,7 @@ export function validateSave(data: unknown): data is GameState {
     typeof s.encounterSeed === 'number' &&
     Array.isArray(s.visitedRegions) &&
     Array.isArray(s.discovered) &&
+    Array.isArray(s.visitedLocations) &&
     typeof s.career === 'object' && s.career !== null &&
     typeof s.career.duels === 'number'
   );

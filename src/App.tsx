@@ -3,7 +3,8 @@ import type { GameAction, GameState, MapEntity } from './game/types';
 import { reducer } from './game/state';
 import { saveGame } from './game/save';
 import { LOCATIONS } from './game/content/world';
-import { getInteraction } from './game/content/dialogues';
+import { canPassExitDirectly, getInteraction } from './game/content/dialogues';
+import { exitDestinationLabel, getExit, locationLabel } from './game/content/navigation';
 import type { DialogueTree } from './game/content/dialogues';
 import type { Facing } from './game/content/scenes';
 import { SceneView } from './ui/SceneView';
@@ -103,6 +104,23 @@ export function App(props: { initialState: GameState; onExitToTitle: () => void 
             : 'explore';
   useEffect(() => setUiMode(uiMode), [uiMode]);
 
+  // 장소 전환: 페이드 + 첫 방문 안내 배너 (이름·방향·눈에 띄는 대상)
+  const prevVisited = useRef(state.visitedLocations);
+  const [arrivalBanner, setArrivalBanner] = useState<string | null>(null);
+  const [fadeKey, setFadeKey] = useState(0);
+  useEffect(() => {
+    const loc = state.player.location;
+    if (!prevVisited.current.includes(loc)) setArrivalBanner(loc);
+    prevVisited.current = state.visitedLocations;
+    setFadeKey((k) => k + 1);
+  }, [state.player.location]); // eslint-disable-line react-hooks/exhaustive-deps
+  const bannerVisible = arrivalBanner !== null && arrivalBanner === state.player.location;
+  useEffect(() => {
+    if (!bannerVisible || dialogue || eventId || state.activeEncounter) return;
+    const t = window.setTimeout(() => setArrivalBanner(null), 4200);
+    return () => window.clearTimeout(t);
+  }, [bannerVisible, dialogue, eventId, state.activeEncounter]);
+
   // MODE D: 새 모험 첫 장면 — 시장으로 가는 길 (1회)
   useEffect(() => {
     if (
@@ -128,6 +146,11 @@ export function App(props: { initialState: GameState; onExitToTitle: () => void 
     if (!target) return;
     if (stateRef.current.flags.tut_interacted !== true) {
       dispatch({ type: 'SET_FLAG', key: 'tut_interacted', value: true });
+    }
+    // 열린 출입구: 목적지는 이미 버튼에 표시되어 있으므로 바로 이동
+    if (canPassExitDirectly(target.id, stateRef.current)) {
+      dispatch({ type: 'USE_EXIT', entityId: target.id });
+      return;
     }
     const tree = getInteraction(target.id, stateRef.current);
     setDialogue({ entityId: target.id, nodeId: tree.entry, snapshot: tree });
@@ -187,26 +210,38 @@ export function App(props: { initialState: GameState; onExitToTitle: () => void 
       tutorialHint = '오른쪽 아래 💬 버튼(또는 E)으로 살펴볼 수 있다';
   }
 
+  // 인접한 출입구의 목적지 — 버튼과 씬 위에 미리 보여준다
+  const adjacentExit = adjacentEntity ? getExit(location.id, adjacentEntity.id) : undefined;
+  const exitLabel = adjacentExit ? `→ ${exitDestinationLabel(location.id, adjacentExit)}` : null;
+
   return (
     <div className="game-root">
       {screen === 'explore' && (
         <div className="explore-viewport">
-          <SceneView
-            location={location}
-            player={state.player}
-            facing={facing}
-            moving={moving}
-            highlightId={adjacentEntity?.id ?? null}
-            flags={state.flags}
-            barks={barks}
-          />
+          <div key={fadeKey} className="scene-fade-wrap">
+            <SceneView
+              location={location}
+              locationTitle={locationLabel(location.id)}
+              player={state.player}
+              facing={facing}
+              moving={moving}
+              highlightId={adjacentEntity?.id ?? null}
+              exitLabel={exitLabel}
+              flags={state.flags}
+              barks={barks}
+            />
+          </div>
           <ExploreHUD state={state} onNavigate={setScreen} hideMap={inPrologue} />
           {tutorialHint && <div className="tutorial-hint">{tutorialHint}</div>}
+          {bannerVisible && exploreActive && !tutorialHint && (
+            <ArrivalBanner locationId={location.id} />
+          )}
           {exploreActive && (
             <TouchControls
               onMove={move}
               onInteract={interact}
-              interactLabel={adjacentEntity ? `${adjacentEntity.name}` : null}
+              interactLabel={exitLabel ?? (adjacentEntity ? adjacentEntity.name : null)}
+              interactIcon={adjacentExit ? '🚪' : '💬'}
             />
           )}
         </div>
@@ -291,6 +326,20 @@ export function App(props: { initialState: GameState; onExitToTitle: () => void 
       {isDevMode() && devOpen && (
         <DevPanel state={state} dispatch={dispatch} onClose={() => setDevOpen(false)} />
       )}
+    </div>
+  );
+}
+
+/** 첫 방문 안내 — 장소 이름, 출입구 방향, 눈에 띄는 대상 */
+function ArrivalBanner(props: { locationId: string }) {
+  const loc = LOCATIONS[props.locationId];
+  if (!loc) return null;
+  const ways = loc.exits.map((e) => `${e.direction}: ${exitDestinationLabel(loc.id, e)}`);
+  return (
+    <div className="arrival-banner">
+      <div className="arrival-title">{locationLabel(loc.id)}</div>
+      <div className="arrival-note">{loc.arrivalNote}</div>
+      {ways.length > 0 && <div className="arrival-ways">{ways.join(' · ')}</div>}
     </div>
   );
 }

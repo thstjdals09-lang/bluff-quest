@@ -1,4 +1,5 @@
 import type { GameState } from '../types';
+import { LOCATIONS } from './world';
 import marketImage from '../../assets/market-bg.jpg';
 import portImage from '../../assets/port-preview.jpg';
 import ghostImage from '../../assets/ghost-casino-preview.jpg';
@@ -113,7 +114,8 @@ export const REGIONS: RegionDef[] = [
       { name: '고블린 포커 클럽', desc: '시장 뒷골목의 소규모 클럽.', status: 'coming_soon' },
     ],
     questIds: ['q_invitation', 'q_black_chip', 'q_mira_past'],
-    entry: { locationId: 'market', x: 2, y: 6 },
+    // 지역 연결도: 월드맵·항구에서의 여행은 GM-01 진입로로 도착한다
+    entry: { locationId: 'market_road', x: 2, y: 2 },
   },
   {
     id: 'trickster_port',
@@ -193,13 +195,10 @@ export function getRegionById(id: string): RegionDef | undefined {
   return REGIONS.find((r) => r.id === id);
 }
 
-/** 탐험 지역(locationId) → 소속 월드 지역(regionId) */
-export const LOCATION_REGION: Record<string, string> = {
-  market_road: 'goblin_market',
-  market: 'goblin_market',
-  warehouse: 'goblin_market',
-  port_docks: 'trickster_port',
-};
+/** 장소(locationId) → 소속 지역(regionId). 장소 정의(world.ts)에서 파생한다. */
+export const LOCATION_REGION: Record<string, string> = Object.fromEntries(
+  Object.values(LOCATIONS).map((l) => [l.id, l.regionId]),
+);
 
 export interface RegionAccess {
   unlocked: boolean;

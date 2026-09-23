@@ -14,7 +14,7 @@ import {
 import type { Account } from './game/accounts';
 import { getSaveMeta, loadGame, saveGame } from './game/save';
 import { createNewAdventureState } from './game/state';
-import { LOCATIONS } from './game/content/world';
+import { locationLabel } from './game/content/navigation';
 import { logEvent } from './game/log';
 import titleArt from './assets/title-art.jpg';
 
@@ -206,7 +206,7 @@ function AccountHome(props: {
       {s ? (
         <div className="save-summary">
           <b>♠ {s.player.name}</b>
-          <span className="dim">📍 {LOCATIONS[s.player.location]?.name ?? s.player.location}</span>
+          <span className="dim">📍 {locationLabel(s.player.location)}</span>
           <span className="dim">💰 {s.player.gold}닢 · 대결 {s.career.duels}회</span>
           {meta && <span className="dim">마지막 저장 {new Date(meta.savedAt).toLocaleString()}</span>}
         </div>

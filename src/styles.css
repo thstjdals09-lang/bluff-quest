@@ -305,6 +305,51 @@ button.active { border-color: var(--gold); color: var(--gold-bright); }
   from { margin-top: 0; }
   to { margin-top: -0.4%; }
 }
+.scene-fade-wrap {
+  position: absolute;
+  inset: 0;
+  animation: scene-fade-in 0.45s ease-out;
+}
+@keyframes scene-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.exit-tag {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: bold;
+  color: #fff4d6;
+  background: rgba(14, 9, 5, 0.85);
+  border: 1.5px solid var(--gold);
+  border-radius: 999px;
+  padding: 4px 12px;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px #000;
+  filter: none;
+}
+.arrival-banner {
+  position: absolute;
+  left: 50%;
+  top: calc(env(safe-area-inset-top) + 196px);
+  transform: translateX(-50%);
+  z-index: 2150;
+  width: max-content;
+  max-width: 74%;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(24, 17, 10, 0.92), rgba(14, 9, 5, 0.92));
+  border: 1px solid var(--gold-dim);
+  border-radius: 14px;
+  padding: 10px 18px;
+  pointer-events: none;
+  animation: banner-in 0.5s ease-out;
+}
+@keyframes banner-in {
+  from { opacity: 0; transform: translate(-50%, -8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+.arrival-title { color: var(--gold-bright); font-weight: bold; font-size: 15px; letter-spacing: 0.04em; }
+.arrival-note { color: var(--text); font-size: 12px; margin-top: 4px; line-height: 1.5; }
+.arrival-ways { color: var(--gold); font-size: 11px; margin-top: 4px; }
 .tutorial-hint {
   position: absolute;
   left: 50%;
@@ -920,6 +965,55 @@ button.active { border-color: var(--gold); color: var(--gold-bright); }
 .region-list { display: flex; flex-direction: column; gap: 6px; }
 .region-row { display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; }
 .region-row b { margin-right: auto; }
+
+/* ── 지역 지도 ── */
+.map-tabs { display: flex; gap: 6px; }
+.map-tabs button { flex: 1; padding: 10px; }
+.region-map {
+  position: relative;
+  aspect-ratio: 1 / 1.1;
+  background: radial-gradient(ellipse at 50% 40%, #2a1e10, #120c06 75%);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.region-map-edges { position: absolute; inset: 0; width: 100%; height: 100%; }
+.region-map-edges .edge { stroke: var(--gold); stroke-width: 0.8; stroke-dasharray: 2 1.4; opacity: 0.8; }
+.region-map-edges .edge.locked { stroke: var(--dim); opacity: 0.6; }
+.edge-lock { position: absolute; transform: translate(-50%, -50%); font-size: 14px; }
+.region-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.region-node-pin {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1c140b;
+  border: 1.5px solid var(--gold);
+  color: var(--gold-bright);
+  font-size: 13px;
+}
+.region-node.known .region-node-pin { border-style: dashed; border-color: var(--dim); color: var(--dim); }
+.region-node.current .region-node-pin { box-shadow: 0 0 12px rgba(240, 200, 120, 0.7); }
+.region-node-name {
+  font-size: 12px;
+  color: var(--text);
+  background: rgba(14, 9, 5, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.region-node.current .region-node-name { color: var(--gold-bright); border-color: var(--gold-dim); }
+.region-node.known .region-node-name { color: var(--dim); }
 
 /* ── 시트 ── */
 .sheet-backdrop {

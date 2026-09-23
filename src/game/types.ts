@@ -105,25 +105,54 @@ export interface GameState {
   discovered: string[];
   /** v3: 포커 커리어 집계 */
   career: CareerStats;
+  /** v6: 방문한 장소(Location) ID 기록 — 지역 방문(visitedRegions)과 별개 */
+  visitedLocations: string[];
 }
 
 // ── 위치/맵 ────────────────────────────────────────────────────
 
 export interface MapEntity {
   id: string;
-  kind: 'npc' | 'poi';
+  /** exit: 다른 장소로 이어지는 출입구 (LocationDef.exits에 목적지 정의) */
+  kind: 'npc' | 'poi' | 'exit';
   x: number;
   y: number;
   icon: string;
   name: string;
 }
 
+/**
+ * 장소 출입구 정의. 출입구 엔티티에 인접하면 목적지가 표시되고,
+ * 상호작용 버튼으로 이동한다. 잠겨 있으면 잠긴 이유를 보여준다.
+ */
+export interface ExitDef {
+  /** 이 출입구에 해당하는 MapEntity id */
+  entityId: string;
+  /** 목적지 장소 id */
+  to: string;
+  /** 목적지 도착 좌표 (도착 장소에서 이동 가능한 빈 칸이어야 한다) */
+  arrive: { x: number; y: number };
+  /** 방향 안내용 (도착 배너·지역 지도) */
+  direction: '북' | '남' | '동' | '서';
+  /** 이 출입구가 열리는 조건 — 없으면 항상 열림 */
+  requires?: { unlocked?: string; flag?: string };
+  /** 잠겨 있을 때 짧은 안내 */
+  lockedHint?: string;
+}
+
 export interface LocationDef {
   id: string;
   name: string;
+  /** 소속 지역 (월드맵 지역 id) */
+  regionId: string;
+  /** 지역 기획서상의 장소 코드 (예: GM-02) — 기획 추적용, 게임 UI에는 개발 모드에서만 표시 */
+  code?: string;
+  /** 첫 방문 안내 한 줄 (눈에 띄는 대상) */
+  arrivalNote: string;
   /** '#'=벽, '.'=바닥 문자열 행 */
   layout: string[];
   entities: MapEntity[];
+  exits: ExitDef[];
   playerStart: { x: number; y: number };
 }
 
@@ -193,6 +222,7 @@ export type GameAction =
   | { type: 'NPC_MET'; npcId: string }
   | { type: 'NPC_SET'; npcId: string; patch: Partial<NpcRuntime> }
   | { type: 'GOTO_LOCATION'; locationId: string; x: number; y: number }
+  | { type: 'USE_EXIT'; entityId: string }
   | { type: 'ENCOUNTER_START'; npcId: string }
   | { type: 'ENCOUNTER_INTRO_DONE' }
   | { type: 'ENCOUNTER_INFO'; action: InfoActionId }

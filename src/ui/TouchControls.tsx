@@ -8,6 +8,8 @@ export function TouchControls(props: {
   onMove: (dx: number, dy: number) => void;
   onInteract: () => void;
   interactLabel: string | null;
+  /** 버튼 아이콘 — 출입구면 🚪 */
+  interactIcon?: string;
 }) {
   const repeatRef = useRef<number | undefined>(undefined);
   const { onMove } = props;
@@ -58,7 +60,7 @@ export function TouchControls(props: {
         disabled={!props.interactLabel}
         onClick={props.onInteract}
       >
-        <span className="interact-fab-icon">💬</span>
+        <span className="interact-fab-icon">{props.interactIcon ?? '💬'}</span>
         <span className="interact-fab-label">{props.interactLabel ?? '가까이 가면\n상호작용'}</span>
       </button>
     </>

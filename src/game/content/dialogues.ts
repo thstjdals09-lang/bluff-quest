@@ -1,4 +1,5 @@
-import type { DialogueChoice, DialogueNode, GameState } from '../types';
+import type { DialogueChoice, DialogueNode, ExitDef, GameState } from '../types';
+import { exitDestinationLabel, getExit, isExitOpen } from './navigation';
 
 export interface DialogueTree {
   entry: string;
@@ -28,6 +29,9 @@ export function resolveDialogueNode(
  * - 플레이어의 접근 방식(캐묻기/우회 조사)에 따라 공개 장면과 관계가 달라진다.
  */
 export function getInteraction(entityId: string, state: GameState): DialogueTree {
+  // 출입구: 이야기가 걸린 문은 전용 대화, 나머지는 공통 출입구 대화
+  const exit = getExit(state.player.location, entityId);
+  if (exit && !hasExitStoryHook(entityId, state)) return exitTree(state, exit);
   switch (entityId) {
     case 'old_card':
       return oldCardInteraction(state);
@@ -35,11 +39,6 @@ export function getInteraction(entityId: string, state: GameState): DialogueTree
       return gateMerchantDialogue(state);
     case 'market_gate':
       return marketGateInteraction(state);
-    case 'market_exit':
-      return tree('시장 입구', '시장 남쪽 문 너머로, 방금 걸어온 흙길이 달빛 아래 뻗어 있다.', [
-        { text: '바깥 길로 나간다', effects: [{ type: 'GOTO_LOCATION', locationId: 'market_road', x: 2, y: 1 }] },
-        { text: '시장에 머무른다' },
-      ]);
     case 'goblin':
       return goblinDialogue(state);
     case 'mira':
@@ -54,18 +53,8 @@ export function getInteraction(entityId: string, state: GameState): DialogueTree
       return chestInteraction(state);
     case 'ledger_scrap':
       return ledgerInteraction(state);
-    case 'exit_door':
-      return tree('', '시장으로 돌아간다.', [
-        { text: '나가기', effects: [{ type: 'GOTO_LOCATION', locationId: 'market', x: 3, y: 1 }] },
-        { text: '더 둘러본다' },
-      ]);
     case 'fin':
       return finDialogue(state);
-    case 'harbor_gate':
-      return tree('항구 정문', '시장 방면으로 이어지는 해안길이다.', [
-        { text: '고블린 시장으로 돌아간다', effects: [{ type: 'GOTO_LOCATION', locationId: 'market', x: 3, y: 1 }] },
-        { text: '부두에 머무른다' },
-      ]);
     case 'pier_notice':
       return pierNoticeInteraction(state);
     case 'cargo':
@@ -79,6 +68,40 @@ export function getInteraction(entityId: string, state: GameState): DialogueTree
     default:
       return tree('', '특별한 것은 없다.', [{ text: '확인' }]);
   }
+}
+
+// ── 출입구 ─────────────────────────────────────────────────────
+
+/**
+ * 이야기가 걸린 출입구인지 — 이 경우 공통 이동 대신 전용 대화를 연다.
+ * - 프롤로그 진행 중 시장 문: 시장 첫인상 연출·프롤로그 완료 처리
+ * - 잠긴 창고 문: 열쇠를 쓰는 기존 사건
+ */
+export function hasExitStoryHook(entityId: string, state: GameState): boolean {
+  if (entityId === 'market_gate') {
+    const q = state.quests.q_prologue;
+    return q !== undefined && q.stage !== 'done';
+  }
+  if (entityId === 'warehouse_door') return !state.unlocked.includes('warehouse');
+  return false;
+}
+
+/** 출입구를 대화 없이 바로 지날 수 있는지 (열려 있고 이야기가 걸려 있지 않음) */
+export function canPassExitDirectly(entityId: string, state: GameState): boolean {
+  const exit = getExit(state.player.location, entityId);
+  return exit !== undefined && isExitOpen(exit, state) && !hasExitStoryHook(entityId, state);
+}
+
+/** 공통 출입구 대화 — 목적지 확인 후 이동, 또는 잠긴 이유 안내 */
+function exitTree(state: GameState, exit: ExitDef): DialogueTree {
+  const dest = exitDestinationLabel(state.player.location, exit);
+  if (!isExitOpen(exit, state)) {
+    return tree(dest, exit.lockedHint ?? '지금은 지나갈 수 없다.', [{ text: '물러난다' }]);
+  }
+  return tree(dest, `${exit.direction}쪽 — ${dest}(으)로 이어진다.`, [
+    { text: '이동한다', effects: [{ type: 'USE_EXIT', entityId: exit.entityId }] },
+    { text: '머무른다' },
+  ]);
 }
 
 // ── 프롤로그: 시장으로 가는 길 ───────────────────────────────────
@@ -179,19 +202,13 @@ function gateMerchantDialogue(state: GameState): DialogueTree {
   };
 }
 
+/** 프롤로그 진행 중에만 쓰이는 시장 문 대화 (이후에는 공통 출입구로 처리) */
 function marketGateInteraction(state: GameState): DialogueTree {
-  const toMarket = { type: 'GOTO_LOCATION', locationId: 'market', x: 2, y: 5 } as const;
   const effects: NonNullable<DialogueChoice['effects']> = [
-    toMarket,
+    { type: 'USE_EXIT', entityId: 'market_gate' },
     ...prologueStep(state, 'done'),
     { type: 'SET_FLAG', key: 'prologue_done', value: true },
   ];
-  if (state.flags.prologue_done === true) {
-    return tree('고블린 시장 입구', '붉은 등불이 걸린 시장 문. 안쪽에서 흥정 소리가 끊이지 않는다.', [
-      { text: '시장으로 들어간다', effects: [toMarket] },
-      { text: '길에 머무른다' },
-    ]);
-  }
   const text = state.flags.prologue_card !== true
     ? '붉은 등불이 걸린 시장 문. 문틈으로 호객 소리와 환호성이 새어 나온다. ...그런데 방금 지나온 길가에서 뭔가 반짝이지 않았나?'
     : '붉은 등불이 걸린 시장 문. 문틈으로 호객 소리와 환호성, 누군가 흥정에 이겼다고 소리치는 목소리가 새어 나온다.';
@@ -577,12 +594,6 @@ function cratesInteraction(state: GameState): DialogueTree {
 }
 
 function warehouseDoorInteraction(state: GameState): DialogueTree {
-  if (state.unlocked.includes('warehouse')) {
-    return tree('오래된 창고', '창고 문이 열려 있다.', [
-      { text: '들어간다', effects: [{ type: 'GOTO_LOCATION', locationId: 'warehouse', x: 2, y: 4 }] },
-      { text: '돌아선다' },
-    ]);
-  }
   if (state.inventory.includes('old_key')) {
     return {
       entry: 'root',

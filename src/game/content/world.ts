@@ -1,16 +1,24 @@
 import type { GameState, ItemDef, LocationDef, QuestDef, QuestStageDef } from '../types';
 
-// ── 지역 정의 ──────────────────────────────────────────────────
+// ── 장소 정의 ──────────────────────────────────────────────────
 
 /**
+ * 장소(Location) = 장면 전환으로 연결되는 개별 탐험 공간. 여러 장소가 하나의 지역(Region)을 이룬다.
+ *
  * 논리 그리드: '#'=이동 불가(벽), '.'=이동 가능.
  * 엔티티가 서 있는 칸도 이동 불가로 처리된다(state.ts isWalkable).
  * 그리드는 배경 플레이트(scenes.ts)의 길 영역에 원근 투영된다.
+ *
+ * 출입구는 kind:'exit' 엔티티 + exits 정의로 만든다. 내부 id(market 등)는
+ * 세이브 데이터와 연결되어 있으므로 바꾸지 않고 표시 이름만 바꾼다.
  */
 export const LOCATIONS: Record<string, LocationDef> = {
   market_road: {
     id: 'market_road',
     name: '시장으로 가는 길',
+    regionId: 'goblin_market',
+    code: 'GM-01',
+    arrivalNote: '붉은 등불이 걸린 시장 문이 길 끝에 보인다.',
     layout: [
       '#####', // 0: 시장 입구 문
       '.....', // 1 (우: 입구의 상인)
@@ -22,15 +30,19 @@ export const LOCATIONS: Record<string, LocationDef> = {
       '.....', // 7
     ],
     entities: [
-      { id: 'market_gate', kind: 'poi', x: 2, y: 0, icon: '🏮', name: '고블린 시장 입구' },
+      { id: 'market_gate', kind: 'exit', x: 2, y: 0, icon: '🏮', name: '고블린 시장 입구' },
       { id: 'gate_merchant', kind: 'npc', x: 4, y: 1, icon: '🛒', name: '입구의 상인' },
       { id: 'old_card', kind: 'poi', x: 1, y: 4, icon: '✨', name: '길가의 반짝이는 것' },
     ],
+    exits: [{ entityId: 'market_gate', to: 'market', arrive: { x: 2, y: 7 }, direction: '북' }],
     playerStart: { x: 2, y: 6 },
   },
   market: {
     id: 'market',
-    name: '고블린 시장',
+    name: '입구 장터',
+    regionId: 'goblin_market',
+    code: 'GM-02',
+    arrivalNote: '그리즐의 상자 좌판과 미라의 약초 좌판, 시장 게시판이 눈에 띈다.',
     layout: [
       '#######', // 0: 북쪽 성벽 (창고 문)
       '.......', // 1
@@ -40,22 +52,36 @@ export const LOCATIONS: Record<string, LocationDef> = {
       '.......', // 5
       '.......', // 6 (중앙: 상자 더미 / 우: 미라 좌판)
       '.......', // 7
-      '.......', // 8 (시작 지점)
-      '.......', // 9
+      '.......', // 8
+      '.......', // 9 (남쪽: 진입로 방면)
     ],
     entities: [
-      { id: 'warehouse_door', kind: 'poi', x: 3, y: 0, icon: '🚪', name: '잠긴 창고' },
+      { id: 'warehouse_door', kind: 'exit', x: 3, y: 0, icon: '🚪', name: '오래된 창고 문' },
       { id: 'board', kind: 'poi', x: 5, y: 1, icon: '📜', name: '시장 게시판' },
       { id: 'goblin', kind: 'npc', x: 0, y: 4, icon: '👺', name: '그리즐' },
       { id: 'crates', kind: 'poi', x: 3, y: 6, icon: '📦', name: '부서진 상자 더미' },
       { id: 'mira', kind: 'npc', x: 6, y: 6, icon: '🧙', name: '약초상 미라' },
-      { id: 'market_exit', kind: 'poi', x: 3, y: 9, icon: '🛤️', name: '시장 입구 (바깥 길)' },
+      { id: 'market_exit', kind: 'exit', x: 3, y: 9, icon: '🛤️', name: '남쪽 출구' },
+    ],
+    exits: [
+      {
+        entityId: 'warehouse_door',
+        to: 'warehouse',
+        arrive: { x: 2, y: 4 },
+        direction: '북',
+        requires: { unlocked: 'warehouse' },
+        lockedHint: '녹슨 자물쇠가 걸려 있다.',
+      },
+      { entityId: 'market_exit', to: 'market_road', arrive: { x: 2, y: 2 }, direction: '남' },
     ],
     playerStart: { x: 2, y: 6 },
   },
   warehouse: {
     id: 'warehouse',
     name: '오래된 창고',
+    regionId: 'goblin_market',
+    code: 'GM-02a',
+    arrivalNote: '달빛이 먼지 쌓인 궤짝과 선반을 비춘다.',
     layout: [
       '#####', // 0: 안쪽 벽
       '.....', // 1 (궤짝)
@@ -67,13 +93,16 @@ export const LOCATIONS: Record<string, LocationDef> = {
     entities: [
       { id: 'chest', kind: 'poi', x: 2, y: 1, icon: '🗝️', name: '먼지 쌓인 궤짝' },
       { id: 'ledger_scrap', kind: 'poi', x: 4, y: 2, icon: '📜', name: '선반의 낡은 장부' },
-      { id: 'exit_door', kind: 'poi', x: 2, y: 5, icon: '🚪', name: '시장으로 나가는 문' },
+      { id: 'exit_door', kind: 'exit', x: 2, y: 5, icon: '🚪', name: '창고 문' },
     ],
+    exits: [{ entityId: 'exit_door', to: 'market', arrive: { x: 3, y: 1 }, direction: '남' }],
     playerStart: { x: 2, y: 4 },
   },
   port_docks: {
     id: 'port_docks',
-    name: '사기꾼들의 항구 — 밤의 부두',
+    name: '밤의 부두',
+    regionId: 'trickster_port',
+    arrivalNote: '부두 게시판과 정보상의 좌대, 선술집 문이 보인다.',
     layout: [
       '#######', // 0: 항구 방벽과 정문
       '.......', // 1
@@ -83,16 +112,18 @@ export const LOCATIONS: Record<string, LocationDef> = {
       '.......', // 5
       '.......', // 6 (좌: 하역된 밀수 화물)
       '.......', // 7
-      '.......', // 8 (시작 지점)
+      '.......', // 8
       '.......', // 9
     ],
     entities: [
-      { id: 'harbor_gate', kind: 'poi', x: 3, y: 0, icon: '⛩️', name: '항구 정문 — 시장 방면' },
+      { id: 'harbor_gate', kind: 'exit', x: 3, y: 0, icon: '⛩️', name: '항구 정문' },
       { id: 'pier_notice', kind: 'poi', x: 5, y: 1, icon: '📜', name: '부두 게시판' },
       { id: 'tavern_door', kind: 'poi', x: 6, y: 2, icon: '🍺', name: '선술집 문' },
       { id: 'fin', kind: 'npc', x: 6, y: 4, icon: '🧔', name: '정보상 올드 핀' },
       { id: 'cargo', kind: 'poi', x: 0, y: 6, icon: '📦', name: '하역된 밀수 화물' },
     ],
+    // 지역 간 출입구: 해안길을 따라 고블린 시장 진입로로 (돌아오는 길은 월드맵)
+    exits: [{ entityId: 'harbor_gate', to: 'market_road', arrive: { x: 2, y: 2 }, direction: '북' }],
     playerStart: { x: 3, y: 6 },
   },
 };

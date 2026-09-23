@@ -9,6 +9,8 @@ import {
   getRegionById,
 } from '../../game/content/regions';
 import { QUESTS } from '../../game/content/world';
+import { REGION_NAMES, buildRegionMap } from '../../game/content/navigation';
+import { isDevMode } from '../../App';
 import worldmapImage from '../../assets/worldmap.jpg';
 
 /** 전체 월드맵 + 지역 상세. 지역 데이터는 regions.ts에서만 온다. */
@@ -19,10 +21,23 @@ export function WorldMapScreen(props: {
 }) {
   const { state } = props;
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [tab, setTab] = useState<'region' | 'world'>('region');
   const selected = selectedId ? getRegionById(selectedId) : undefined;
+  const currentRegionId = LOCATION_REGION[state.player.location];
 
   return (
     <div className="screen">
+      <div className="map-tabs">
+        <button className={tab === 'region' ? 'active' : ''} onClick={() => setTab('region')}>
+          🧭 지역 지도
+        </button>
+        <button className={tab === 'world' ? 'active' : ''} onClick={() => setTab('world')}>
+          🗺️ 월드맵
+        </button>
+      </div>
+      {tab === 'region' && currentRegionId && <RegionMap state={state} regionId={currentRegionId} />}
+      {tab === 'world' && (
+      <>
       <h2 className="screen-title">🗺️ 월드맵</h2>
       <p className="screen-sub">지역을 선택하면 상세 정보를 볼 수 있다.</p>
       <div className="worldmap">
@@ -65,6 +80,8 @@ export function WorldMapScreen(props: {
           );
         })}
       </div>
+      </>
+      )}
       {selected && (
         <RegionDetail
           state={state}
@@ -209,5 +226,73 @@ function RegionDetail(props: {
         )}
       </div>
     </div>
+  );
+}
+
+/** 지역 내부 지도 — 장소 연결 데이터에서 자동 생성. 아는 장소만 표시한다. */
+function RegionMap(props: { state: GameState; regionId: string }) {
+  const { nodes, edges, outbound } = buildRegionMap(props.regionId, props.state);
+  const pos = (id: string) => nodes.find((n) => n.locationId === id)?.pos ?? { x: 50, y: 50 };
+  return (
+    <>
+      <h2 className="screen-title">🧭 {REGION_NAMES[props.regionId] ?? props.regionId}</h2>
+      <p className="screen-sub">가 본 장소와, 그곳에서 이어지는 길이 표시된다.</p>
+      <div className="region-map">
+        <svg className="region-map-edges" viewBox="0 0 100 100" preserveAspectRatio="none">
+          {edges.map((e) => {
+            const a = pos(e.from);
+            const b = pos(e.to);
+            return (
+              <line
+                key={`${e.from}-${e.to}`}
+                x1={a.x}
+                y1={a.y}
+                x2={b.x}
+                y2={b.y}
+                className={e.locked ? 'edge locked' : 'edge'}
+              />
+            );
+          })}
+        </svg>
+        {edges
+          .filter((e) => e.locked)
+          .map((e) => {
+            const a = pos(e.from);
+            const b = pos(e.to);
+            return (
+              <span
+                key={`lock-${e.from}-${e.to}`}
+                className="edge-lock"
+                style={{ left: `${(a.x + b.x) / 2}%`, top: `${(a.y + b.y) / 2}%` }}
+              >
+                🔒
+              </span>
+            );
+          })}
+        {nodes.map((n) => {
+          const loc = n.locationId;
+          return (
+            <div
+              key={loc}
+              className={`region-node ${n.status}`}
+              style={{ left: `${n.pos.x}%`, top: `${n.pos.y}%` }}
+            >
+              <span className="region-node-pin">{n.status === 'current' ? '📍' : n.status === 'visited' ? '●' : '○'}</span>
+              <span className="region-node-name">{n.status === 'known' ? `${n.name} (미방문)` : n.name}</span>
+            </div>
+          );
+        })}
+      </div>
+      {outbound.length > 0 && (
+        <div className="card">
+          <b>다른 지역으로 이어지는 길</b>
+          {outbound.map((o) => (
+            <p key={o.from + o.label} className="dim">· {o.label}</p>
+          ))}
+        </div>
+      )}
+      <p className="dim hint-line">다른 지역으로의 여행은 월드맵 탭에서 할 수 있다.</p>
+      {isDevMode() && <p className="dim hint-line">[DEV] 기획 범위 GM-01~GM-11·GM-02a 중 구현된 장소만 표시됨</p>}
+    </>
   );
 }

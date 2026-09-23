@@ -25,6 +25,10 @@ export function SceneView(props: {
   facing: Facing;
   moving: boolean;
   highlightId: string | null;
+  /** 인접한 대상이 출입구일 때의 목적지 표시 (예: "→ 오래된 창고") */
+  exitLabel?: string | null;
+  /** 상단 장소 표시 (지역 · 장소) */
+  locationTitle?: string;
   flags: Record<string, FlagValue>;
   /** 엔티티별 호객·혼잣말 말풍선 (없으면 표시 안 함) */
   barks?: Record<string, string>;
@@ -133,7 +137,7 @@ export function SceneView(props: {
                   className="scene-bark"
                   style={{
                     // 말풍선은 화면(카메라) 안쪽에 보이도록 가로 위치를 보정한다
-                    left: `${((clamp((x / 100) * worldW + tx, 96, frame.w - 96) - tx) / worldW) * 100}%`,
+                    left: `${((clamp((x / 100) * worldW + tx, 96, frame.w - 156) - tx) / worldW) * 100}%`,
                     // 말풍선 아래 끝이 상단 HUD(약 150px)보다 아래에 오도록
                     top: `${((Math.max(((y - h - 3) / 100) * worldH + ty, 150) - ty) / worldH) * 100}%`,
                     zIndex: pt.z + 2,
@@ -147,7 +151,7 @@ export function SceneView(props: {
                   className="interact-marker"
                   style={{ left: `${x}%`, top: `${y - h - (obj.nameplate ? 3.5 : 0.5)}%`, zIndex: pt.z + 1 }}
                 >
-                  ❗
+                  {props.exitLabel ? <span className="exit-tag">{props.exitLabel}</span> : '❗'}
                 </div>
               )}
             </div>
@@ -161,7 +165,7 @@ export function SceneView(props: {
             const pt = project(e.x, e.y);
             return props.highlightId === e.id ? (
               <div key={e.id} className="interact-marker" style={{ left: `${pt.x}%`, top: `${pt.y - 5}%`, zIndex: pt.z + 1 }}>
-                ❗
+                {props.exitLabel ? <span className="exit-tag">{props.exitLabel}</span> : '❗'}
               </div>
             ) : null;
           })}
@@ -185,7 +189,7 @@ export function SceneView(props: {
           <DevOverlay location={location} player={player} project={project} flags={dev} />
         )}
       </div>
-      <div className="scene-title">📍 {location.name}</div>
+      <div className="scene-title">📍 {props.locationTitle ?? location.name}</div>
     </div>
   );
 }

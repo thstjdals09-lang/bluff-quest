@@ -11,6 +11,7 @@ import { getUiDebug, subscribeUiDebug } from '../game/uidebug';
 import { SCENES, projectToScreen } from '../game/content/scenes';
 import { LOCATIONS } from '../game/content/world';
 import { REGIONS, getRegionAccess } from '../game/content/regions';
+import { validateLocationGraph } from '../game/content/navigation';
 
 type Tab = 'state' | 'control' | 'encounter' | 'save' | 'log';
 
@@ -90,7 +91,7 @@ function StateTab({ state }: { state: GameState }) {
       <p>플래그: <code>{JSON.stringify(state.flags)}</code></p>
       <p>NPC: <code>{JSON.stringify(state.npcs)}</code></p>
       <p>
-        월드: 방문 [{state.visitedRegions.join(', ')}] · 발견 [{state.discovered.join(', ') || '없음'}] ·
+        장소 방문 [{state.visitedLocations.join(', ')}] · 월드: 방문 [{state.visitedRegions.join(', ')}] · 발견 [{state.discovered.join(', ') || '없음'}] ·
         커리어 {state.career.duels}전 {state.career.wins}승 {state.career.losses}패 {state.career.walkaways}회피
       </p>
       <p>
@@ -179,9 +180,28 @@ function ControlTab({ state, dispatch }: { state: GameState; dispatch: Dispatch<
       <div>
         <b>장소</b>
         <button onClick={() => dispatch({ type: 'UNLOCK', id: 'warehouse' })}>창고 해금</button>
-        <button onClick={() => dispatch({ type: 'GOTO_LOCATION', locationId: 'market', x: 2, y: 6 })}>시장으로</button>
-        <button onClick={() => dispatch({ type: 'GOTO_LOCATION', locationId: 'warehouse', x: 2, y: 4 })}>창고로</button>
-        <button onClick={() => dispatch({ type: 'GOTO_LOCATION', locationId: 'port_docks', x: 3, y: 6 })}>항구로</button>
+        {Object.values(LOCATIONS).map((l) => (
+          <button
+            key={l.id}
+            className={state.player.location === l.id ? 'active' : ''}
+            onClick={() => dispatch({ type: 'GOTO_LOCATION', locationId: l.id, x: l.playerStart.x, y: l.playerStart.y })}
+          >
+            {l.code ? `${l.code} ` : ''}{l.name}
+          </button>
+        ))}
+      </div>
+      <div>
+        <b>장소 연결 검사</b>
+        {(() => {
+          const problems = validateLocationGraph();
+          return problems.length === 0 ? (
+            <span className="dim">정상 — 장소 {Object.keys(LOCATIONS).length}곳, 출입구 {Object.values(LOCATIONS).reduce((n, l) => n + l.exits.length, 0)}개</span>
+          ) : (
+            problems.map((p) => (
+              <span key={p} className="log-error">⛔ {p}</span>
+            ))
+          );
+        })()}
       </div>
       <div>
         <b>월드</b>
