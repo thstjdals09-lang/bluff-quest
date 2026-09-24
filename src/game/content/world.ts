@@ -250,6 +250,17 @@ export const QUESTS: Record<string, QuestDef> = {
       { id: 'returned', title: '부탁 완료', objective: '그리즐에게 상자를 돌려줬다.' },
     ],
   },
+  q_handbill: {
+    id: 'q_handbill',
+    name: '벽보 덮기',
+    type: 'regional',
+    regionId: 'goblin_market',
+    stages: [
+      { id: 'noticed', title: '익명 벽보', objective: '시장 게시판에 그리즐의 상자 게임을 헐뜯는 익명 벽보가 붙었다. 누가 붙이는 걸까?' },
+      { id: 'investigating', title: '붙이는 손', objective: '벽보를 뜯어내면 누군가 또 붙이러 온다. 자리를 비우는 사람과 남는 흔적을 살펴보자.' },
+      { id: 'resolved', title: '벽보가 멎다', objective: '벽보는 더 붙지 않는다. 누가 붙였는지는 나의 판단으로 남았다.' },
+    ],
+  },
   q_invitation: {
     id: 'q_invitation',
     name: '수상한 초대장',
@@ -300,7 +311,7 @@ export const QUESTS: Record<string, QuestDef> = {
 };
 
 /** HUD 퀘스트 트래커가 보여줄 현재 퀘스트 — 우선순위 순서로 미완료 퀘스트를 고른다. */
-const TRACK_ORDER = ['q_prologue', 'q_night_pier', 'q_invitation', 'q_grizzle_favor', 'q_s01', 'q_black_chip', 'q_mira_past'];
+const TRACK_ORDER = ['q_prologue', 'q_night_pier', 'q_invitation', 'q_grizzle_favor', 'q_s01', 'q_handbill', 'q_black_chip', 'q_mira_past'];
 
 export function getTrackedQuest(
   state: GameState,

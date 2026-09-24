@@ -143,6 +143,13 @@ export function getNpcRelation(def: NpcDef, state: GameState): NpcRelationView {
     } else {
       relation = '진품 소동 중 — 자기 가드가 원본이라고 주장한다';
     }
+    if (who === 'B') {
+      const r = state.flags.hb_resolved;
+      if (r === 'evidence') records.push('벽보 흔적을 들이밀자 다시는 안 붙이겠다고 했다.');
+      if (r === 'persuaded') records.push('벽보 일을 조용히 타일렀다. 그리즐에게는 말하지 않기로 했다.');
+      if (r === 'bluff') records.push('본 척 떠보자 벽보 일을 털어놓았다.');
+      if (r === 'grizzle') records.push('벽보 일을 그리즐에게 알렸다. 되팔이는 그 사실을 알고 있을 것이다.');
+    }
   }
   if (def.id === 'goblin' && rt) {
     if (rt.caughtLying) {
@@ -155,6 +162,8 @@ export function getNpcRelation(def: NpcDef, state: GameState): NpcRelationView {
     if (state.career.wins > 0) records.push(`상자 대결 승리 ${state.career.wins}회.`);
     if (state.flags.chip_refused === true) records.push('검은 칩만은 어떤 값에도 팔지 않는 것을 목격했다.');
     if (state.flags.chip_pressed === true) records.push('칩에 대해 캐물었다가 그리즐의 미움을 샀다.');
+    if (state.flags.hb_resolved === 'grizzle') records.push('벽보를 붙인 게 되팔이 상인 같다고 알려 줬다. 그리즐이 따지러 갔다.');
+    if (state.flags.hb_grizzle_told === true) records.push('벽보가 더는 안 붙을 거라고 전했다. 그리즐이 누군지는 묻지 않았다.');
     if (state.flags.gf_stage === 'returned') {
       records.push(
         state.flags.gf_key_given === true

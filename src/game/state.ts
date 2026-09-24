@@ -2,6 +2,7 @@ import type { GameAction, GameState, NpcRuntime } from './types';
 import { LOCATIONS } from './content/world';
 import { getExit, isExitOpen } from './content/navigation';
 import { onEnterCentralMarket } from './content/s01';
+import { hbOnTransition } from './content/handbill';
 import { applyInfoAction, chooseBox, getScenario, leaveEncounter, startEncounter } from './encounter';
 import { logEvent } from './log';
 
@@ -101,6 +102,8 @@ function gotoLocation(state: GameState, locationId: string, x: number, y: number
   // 장소 이동 횟수 (보류한 사건의 경과 판정용 — 시계 시간이 아니라 이동으로 센다)
   next = { ...next, flags: { ...next.flags, travel_count: Number(next.flags.travel_count ?? 0) + 1 } };
   if (locationId === 'central_market') next = onEnterCentralMarket(next, state.encounterSeed);
+  // GM-P4 벽보 사건: 장소 전환에서만 상태가 전진한다 (불러오기로는 움직이지 않음)
+  next = hbOnTransition(state.player.location, next);
   // 항구 첫 도착: 메인 스토리 다음 장 자동 시작 + 도착 연출 플래그
   if (regionId === 'trickster_port' && !next.quests.q_night_pier) {
     next = setQuestStage(next, 'q_night_pier', 'arrive');

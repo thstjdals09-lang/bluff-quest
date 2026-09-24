@@ -145,7 +145,7 @@ export const SCENES: Record<string, SceneDef> = {
       // 북쪽 수레·동쪽 바리케이드는 배경에 그려져 있다. 서쪽 입구는 배경에 막힘이 없어 짐 더미를 둔다.
       { entityId: 'gm03_west_pile', sprite: cratesSprite, height: 15, offsetX: -3 },
       { entityId: 's01_a', sprite: s01aStand, height: 15, offsetX: 2, offsetY: -3, nameplate: true },
-      { entityId: 's01_b', sprite: s01bStand, height: 15, offsetX: -2, offsetY: -3, nameplate: true },
+      { entityId: 's01_b', sprite: s01bStand, height: 15, offsetX: -2, offsetY: -3, nameplate: true, hideWhenFlag: 'hb_b_away' },
       { entityId: 's01_guards', sprite: guardsSprite, height: 5 },
       { entityId: 's01_onlooker', sprite: onlookerStand, height: 13 },
     ],

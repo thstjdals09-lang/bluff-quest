@@ -1,6 +1,7 @@
 import type { FlagValue, GameState } from '../types';
 import { s01Records } from './s01';
 import { favorRecords } from './favor';
+import { hbRecords } from './handbill';
 
 /**
  * 수집한 정보 기록 — 일지에 표시된다.
@@ -55,7 +56,7 @@ export const STORY_RECORDS: StoryRecordDef[] = [
 ];
 
 export function getDiscoveredRecords(state: GameState): { kind: RecordKind; text: string }[] {
-  return [...staticRecords(state), ...s01Records(state), ...favorRecords(state)];
+  return [...staticRecords(state), ...s01Records(state), ...favorRecords(state), ...hbRecords(state)];
 }
 
 function staticRecords(state: GameState): { kind: RecordKind; text: string }[] {

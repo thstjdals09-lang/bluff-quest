@@ -2,6 +2,7 @@ import type { DialogueChoice, DialogueNode, ExitDef, GameState } from '../types'
 import { exitDestinationLabel, getExit, getFutureWay, isExitOpen } from './navigation';
 import { FAVOR_CART_ID, favorCartInteraction, favorGrizzleChoices, favorGrizzleNodes, favorStallInteraction } from './favor';
 import { s01Interaction } from './s01';
+import { hbAugmentTree, hbBoardAugment, hbEmptyStall } from './handbill';
 
 export interface DialogueTree {
   entry: string;
@@ -40,8 +41,12 @@ export function getInteraction(entityId: string, state: GameState): DialogueTree
     const fav = entityId === FAVOR_CART_ID ? favorCartInteraction(state, way.label, way.lockedHint) : null;
     return fav ?? tree(way.label, way.lockedHint, [{ text: '물러난다' }]);
   }
+  if (entityId === 's01_b') {
+    const empty = hbEmptyStall(state);
+    if (empty) return empty;
+  }
   const s01 = s01Interaction(entityId, state);
-  if (s01) return s01;
+  if (s01) return hbAugmentTree(entityId, state, s01);
   switch (entityId) {
     case 'old_card':
       return oldCardInteraction(state);
@@ -337,6 +342,7 @@ function goblinDialogue(state: GameState): DialogueTree {
       ],
     });
   }
+  base = hbAugmentTree('goblin', state, base);
   base.nodes.king = {
     id: 'king',
     speaker: '그리즐',
@@ -575,6 +581,25 @@ function miraDialogue(state: GameState): DialogueTree {
 // ── 시장 조사 대상 ─────────────────────────────────────────────
 
 function boardInteraction(state: GameState): DialogueTree {
+  const base = boardBase(state);
+  const hb = hbBoardAugment(state);
+  if (!hb) return base;
+  // 벽보 사건 중에는 루트를 짧게: 기존 공고문(⚓·포스터)은 한 단계 안쪽 'notice' 노드로 그대로 옮긴다
+  // (모바일에서 긴 본문 + 선택지 넷이 화면 밖으로 밀리지 않게)
+  const arm = (c: DialogueChoice): DialogueChoice => (hb.armEffects.length ? { ...c, effects: [...(c.effects ?? []), ...hb.armEffects] } : c);
+  const notice: DialogueNode = { ...base.nodes.root, id: 'notice', choices: base.nodes.root.choices.map(arm) };
+  const root: DialogueNode = {
+    id: 'root',
+    speaker: '시장 게시판',
+    text: `공고문과 포스터가 겹겹이 붙어 있다.\n${hb.text}`,
+    choices: [arm({ text: '공고문을 읽는다', next: 'notice' }), ...hb.choices, arm({ text: '물러난다' })],
+  };
+  const nodes: Record<string, DialogueNode> = { ...base.nodes, root, notice };
+  for (const n of hb.nodes) nodes[n.id] = n;
+  return { entry: 'root', nodes };
+}
+
+function boardBase(state: GameState): DialogueTree {
   const extra = state.flags.read_manifest ? '' : ' 문양의 생김새를 기억해 두었다.';
   return {
     entry: 'root',
