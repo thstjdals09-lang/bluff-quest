@@ -7,6 +7,10 @@ import finPortrait from '../../assets/fin-stand.png';
 import finBust from '../../assets/fin-bust.png';
 import gateMerchantPortrait from '../../assets/gate-merchant-cart.png';
 import gateMerchantBust from '../../assets/gate-merchant-bust.png';
+import s01aStand from '../../assets/s01-a-stand.png';
+import s01aBust from '../../assets/s01-a-bust.png';
+import s01bStand from '../../assets/s01-b-stand.png';
+import s01bBust from '../../assets/s01-b-bust.png';
 
 /**
  * 주요 NPC 등록부 — 관계 화면과 향후 지역 간 재등장 시스템의 기반.
@@ -39,6 +43,28 @@ export const NPCS: NpcDef[] = [
     bust: gateMerchantBust,
     reappears: true,
     questIds: ['q_prologue'],
+  },
+  {
+    id: 's01_a',
+    name: '공방 상인',
+    regionId: 'goblin_market',
+    role: '중앙 장터 · 카드 가드 공방 (임시 표시명)',
+    desc: '자기 공방 인장에 자부심이 큰 늙은 장인. 공방 물건의 흉내가 돌아다니는 걸 참지 못한다.',
+    portrait: s01aStand,
+    bust: s01aBust,
+    reappears: true,
+    questIds: ['q_s01'],
+  },
+  {
+    id: 's01_b',
+    name: '되팔이 상인',
+    regionId: 'goblin_market',
+    role: '중앙 장터 · 되팔이 (임시 표시명)',
+    desc: '어디서든 물건을 떼어다 파는 젊은 상인. 오늘 안에 가드를 원본 값에 팔고 싶어 한다.',
+    portrait: s01bStand,
+    bust: s01bBust,
+    reappears: true,
+    questIds: ['q_s01'],
   },
   {
     id: 'goblin',
@@ -101,6 +127,21 @@ export function getNpcRelation(def: NpcDef, state: GameState): NpcRelationView {
       if (state.flags.gate_merchant_answer === 'hid') records.push('대답하지 않고 카드를 숨겼다.');
     } else {
       relation = '호객하는 상인';
+    }
+  }
+  if ((def.id === 's01_a' || def.id === 's01_b') && rt) {
+    const who = def.id === 's01_a' ? 'A' : 'B';
+    const rel = state.flags[`s01_rel_${who}`];
+    const v = state.flags.s01_verdict;
+    if (v !== undefined) {
+      relation = rel === 'warm' ? '호감 — 소동에서 편을 들어 줬다' : rel === 'cold' ? '냉담 — 소동의 판단에 불만이 있다' : '보통 — 소동은 일단락됐다';
+      records.push(
+        v === 'mediated'
+          ? '진품 소동에서 누구 편도 들지 않고 둘을 떼어 놓았다.'
+          : `진품 소동에서 ${v === who ? '이 상인의 가드가 원본이라고' : v === 'neither' ? '두 가드 모두 원본이 아니라고' : '상대 상인의 가드가 원본이라고'} 판단했다.`,
+      );
+    } else {
+      relation = '진품 소동 중 — 자기 가드가 원본이라고 주장한다';
     }
   }
   if (def.id === 'goblin' && rt) {

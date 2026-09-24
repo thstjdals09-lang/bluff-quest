@@ -113,7 +113,7 @@ export const REGIONS: RegionDef[] = [
       { name: '시장 챔피언전', desc: '왕고블린과의 최후의 흥정.', status: 'coming_soon' },
       { name: '고블린 포커 클럽', desc: '시장 뒷골목의 소규모 클럽.', status: 'coming_soon' },
     ],
-    questIds: ['q_invitation', 'q_black_chip', 'q_mira_past'],
+    questIds: ['q_invitation', 'q_s01', 'q_black_chip', 'q_mira_past'],
     // 지역 연결도: 월드맵·항구에서의 여행은 GM-01 진입로로 도착한다
     entry: { locationId: 'market_road', x: 2, y: 2 },
   },

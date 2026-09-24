@@ -1,4 +1,5 @@
 import type { FlagValue, GameState } from '../types';
+import { s01Records } from './s01';
 
 /**
  * 수집한 정보 기록 — 일지에 표시된다.
@@ -52,6 +53,10 @@ export const STORY_RECORDS: StoryRecordDef[] = [
 ];
 
 export function getDiscoveredRecords(state: GameState): { kind: RecordKind; text: string }[] {
+  return [...staticRecords(state), ...s01Records(state)];
+}
+
+function staticRecords(state: GameState): { kind: RecordKind; text: string }[] {
   return STORY_RECORDS.filter((r) => {
     const v = state.flags[r.flag];
     if (v === undefined || v === false) return false;

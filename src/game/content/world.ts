@@ -83,7 +83,7 @@ export const LOCATIONS: Record<string, LocationDef> = {
     name: '중앙 장터',
     regionId: 'goblin_market',
     code: 'GM-03',
-    arrivalNote: '좌판 두 개가 마주 보는 광장. 길이 사방으로 뻗어 있지만 지금은 남쪽만 열려 있다.',
+    arrivalNote: '마주 보는 두 좌판에서 상인 둘이 언성을 높이고 있다. 길은 사방으로 뻗어 있지만 지금은 남쪽만 열려 있다.',
     layout: [
       '##.#.####', // 0: 북쪽 길 — 화물 수레가 막고 있음 (4,0)
       '##......#', // 1
@@ -100,6 +100,10 @@ export const LOCATIONS: Record<string, LocationDef> = {
       { id: 'gm03_north_cart', kind: 'poi', x: 4, y: 0, icon: '🛒', name: '길을 막은 화물 수레' },
       { id: 'gm03_west_pile', kind: 'poi', x: 0, y: 2, icon: '📦', name: '쌓아 둔 짐 더미' },
       { id: 'gm03_east_barricade', kind: 'poi', x: 8, y: 2, icon: '🚧', name: '목재 바리케이드' },
+      { id: 's01_a', kind: 'npc', x: 2, y: 3, icon: '👴', name: '공방 상인' },
+      { id: 's01_b', kind: 'npc', x: 6, y: 3, icon: '🧑', name: '되팔이 상인' },
+      { id: 's01_guards', kind: 'poi', x: 4, y: 2, icon: '🎴', name: '두 개의 카드 가드' },
+      { id: 's01_onlooker', kind: 'npc', x: 3, y: 5, icon: '🍢', name: '구경꾼' },
     ],
     exits: [{ entityId: 'gm03_south', to: 'market', arrive: { x: 6, y: 1 }, direction: '남' }],
     futureWays: [
@@ -223,6 +227,18 @@ export const QUESTS: Record<string, QuestDef> = {
       { id: 'done', title: '고블린 시장', objective: '시장에 도착했다. 승부사로서의 모험이 시작된다.' },
     ],
   },
+  q_s01: {
+    id: 'q_s01',
+    name: '두 상인의 진품 소동',
+    type: 'regional',
+    regionId: 'goblin_market',
+    stages: [
+      { id: 'seen', title: '광장의 말다툼', objective: '중앙 장터의 두 상인이 서로 자기 카드 가드가 원본이라고 다툰다.' },
+      { id: 'investigating', title: '흔적 확인', objective: '말이 아니라 직접 확인한 흔적으로 판단해 보자. 판단은 언제든 내릴 수 있다.' },
+      { id: 'deferred', title: '나중으로 미룸', objective: '소동을 지켜보기만 했다. 시장을 돌아다니다 다시 오면 상황이 달라져 있을지도 모른다.' },
+      { id: 'resolved', title: '판단을 내림', objective: '소동은 끝났다. 누가 옳았는지는 나의 판단으로 남았다.' },
+    ],
+  },
   q_invitation: {
     id: 'q_invitation',
     name: '수상한 초대장',
@@ -273,7 +289,7 @@ export const QUESTS: Record<string, QuestDef> = {
 };
 
 /** HUD 퀘스트 트래커가 보여줄 현재 퀘스트 — 우선순위 순서로 미완료 퀘스트를 고른다. */
-const TRACK_ORDER = ['q_prologue', 'q_night_pier', 'q_invitation', 'q_black_chip', 'q_mira_past'];
+const TRACK_ORDER = ['q_prologue', 'q_night_pier', 'q_invitation', 'q_s01', 'q_black_chip', 'q_mira_past'];
 
 export function getTrackedQuest(
   state: GameState,
