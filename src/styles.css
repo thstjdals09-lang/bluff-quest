@@ -1247,3 +1247,17 @@ button.active { border-color: var(--gold); color: var(--gold-bright); }
   .dialogue-choices { gap: 5px; }
   .dialogue-choices button { padding: 8px 10px; font-size: 13px; }
 }
+
+/* 가로·낮은 화면의 심리전 패널: 결과 해설이 길면 유일한 진행 버튼("대결을 마친다")이 스크롤 아래로 숨는다 →
+   패널을 화면 높이에 맞추고 버튼 줄을 패널 바닥에 고정한다 */
+@media (max-height: 520px) {
+  .enc-panel { max-height: calc(100% - 24px); }
+  .enc-panel-buttons {
+    position: sticky;
+    bottom: -14px;
+    margin: 10px -14px -14px;
+    padding: 8px 14px 12px;
+    background: rgba(20, 14, 8, 0.98);
+    border-top: 1px solid var(--gold-dim);
+  }
+}
