@@ -3,6 +3,7 @@ import { exitDestinationLabel, getExit, getFutureWay, isExitOpen } from './navig
 import { FAVOR_CART_ID, favorCartInteraction, favorGrizzleChoices, favorGrizzleNodes, favorStallInteraction } from './favor';
 import { s01Interaction } from './s01';
 import { hbAugmentTree, hbBoardAugment, hbEmptyStall } from './handbill';
+import { fxAugmentFin } from './finExchange';
 
 export interface DialogueTree {
   entry: string;
@@ -69,7 +70,7 @@ export function getInteraction(entityId: string, state: GameState): DialogueTree
     case 'ledger_scrap':
       return ledgerInteraction(state);
     case 'fin':
-      return finDialogue(state);
+      return fxAugmentFin(state, finDialogue(state));
     case 'pier_notice':
       return pierNoticeInteraction(state);
     case 'cargo':

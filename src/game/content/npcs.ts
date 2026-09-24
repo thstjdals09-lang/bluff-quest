@@ -204,6 +204,8 @@ export function getNpcRelation(def: NpcDef, state: GameState): NpcRelationView {
     }
     if (state.flags.invitation_shown === true) records.push('초대장을 직접 보여줬다. 부두에 소문이 돌지도 모른다.');
     if (state.flags.night_pier_hint === true) records.push('밤의 부두 비밀 경기에 관한 이야기를 샀다.');
+    if (state.flags.fin_trade_rep === 'reliable') records.push('시장 소식을 정확하게 전해 핀의 신용을 얻었다.');
+    if (state.flags.fin_trade_rep === 'loose') records.push('확인되지 않는 이야기를 팔아 핀의 눈 밖에 났다.');
   }
   if (met && records.length === 0) records.push('대화를 나눴다.');
 
