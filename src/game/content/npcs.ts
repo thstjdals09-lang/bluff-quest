@@ -75,7 +75,7 @@ export const NPCS: NpcDef[] = [
     portrait: goblinPortrait,
     bust: goblinBust,
     reappears: true,
-    questIds: ['q_invitation', 'q_black_chip'],
+    questIds: ['q_invitation', 'q_black_chip', 'q_grizzle_favor'],
   },
   {
     id: 'mira',
@@ -155,6 +155,16 @@ export function getNpcRelation(def: NpcDef, state: GameState): NpcRelationView {
     if (state.career.wins > 0) records.push(`상자 대결 승리 ${state.career.wins}회.`);
     if (state.flags.chip_refused === true) records.push('검은 칩만은 어떤 값에도 팔지 않는 것을 목격했다.');
     if (state.flags.chip_pressed === true) records.push('칩에 대해 캐물었다가 그리즐의 미움을 샀다.');
+    if (state.flags.gf_stage === 'returned') {
+      records.push(
+        state.flags.gf_key_given === true
+          ? '사라진 경품 상자를 되찾아 주고, 대결 없이 낡은 열쇠를 받았다.'
+          : '사라진 경품 상자를 되찾아 줬다. 열쇠는 이미 가진 뒤였다.',
+      );
+      if (!rt.caughtLying && !rt.fooledPlayer) relation = '거래 상대 — 부탁을 들어준 손님으로 기억한다';
+    } else if (state.flags.gf_stage === 'offered' || state.flags.gf_stage === 'found') {
+      records.push('사라진 예비 경품 상자를 찾아 달라는 부탁을 받았다.');
+    }
     if (state.flags.chip_done === 'warm') {
       relation = '묘한 신뢰 — 그리즐이 약속 이야기를 들려줬다';
       records.push('그리즐이 사라진 친구와의 약속을 직접 이야기해 줬다.');

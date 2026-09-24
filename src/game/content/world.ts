@@ -239,6 +239,17 @@ export const QUESTS: Record<string, QuestDef> = {
       { id: 'resolved', title: '판단을 내림', objective: '소동은 끝났다. 누가 옳았는지는 나의 판단으로 남았다.' },
     ],
   },
+  q_grizzle_favor: {
+    id: 'q_grizzle_favor',
+    name: '그리즐의 부탁',
+    type: 'character',
+    regionId: 'goblin_market',
+    stages: [
+      { id: 'offered', title: '사라진 경품 상자', objective: '그리즐의 칠한 예비 경품 상자가 없어졌다. 그는 짐꾼들이 중앙 장터 북쪽 수레에 실어 갔다고 주장한다.' },
+      { id: 'found', title: '상자를 되찾음', objective: '짐꾼에게서 칠한 상자를 받아 왔다. 그리즐에게 돌려주자.' },
+      { id: 'returned', title: '부탁 완료', objective: '그리즐에게 상자를 돌려줬다.' },
+    ],
+  },
   q_invitation: {
     id: 'q_invitation',
     name: '수상한 초대장',
@@ -289,7 +300,7 @@ export const QUESTS: Record<string, QuestDef> = {
 };
 
 /** HUD 퀘스트 트래커가 보여줄 현재 퀘스트 — 우선순위 순서로 미완료 퀘스트를 고른다. */
-const TRACK_ORDER = ['q_prologue', 'q_night_pier', 'q_invitation', 'q_s01', 'q_black_chip', 'q_mira_past'];
+const TRACK_ORDER = ['q_prologue', 'q_night_pier', 'q_invitation', 'q_grizzle_favor', 'q_s01', 'q_black_chip', 'q_mira_past'];
 
 export function getTrackedQuest(
   state: GameState,

@@ -1,5 +1,6 @@
 import type { DialogueChoice, DialogueNode, ExitDef, GameState } from '../types';
 import { exitDestinationLabel, getExit, getFutureWay, isExitOpen } from './navigation';
+import { FAVOR_CART_ID, favorCartInteraction, favorGrizzleChoices, favorGrizzleNodes, favorStallInteraction } from './favor';
 import { s01Interaction } from './s01';
 
 export interface DialogueTree {
@@ -34,7 +35,11 @@ export function getInteraction(entityId: string, state: GameState): DialogueTree
   const exit = getExit(state.player.location, entityId);
   if (exit && !hasExitStoryHook(entityId, state)) return exitTree(state, exit);
   const way = getFutureWay(state.player.location, entityId);
-  if (way) return tree(way.label, way.lockedHint, [{ text: '물러난다' }]);
+  if (way) {
+    // 막힌 길은 막힌 채로 둔다 — 그리즐의 부탁 중에는 수레 짐꾼과의 대화만 추가된다
+    const fav = entityId === FAVOR_CART_ID ? favorCartInteraction(state, way.label, way.lockedHint) : null;
+    return fav ?? tree(way.label, way.lockedHint, [{ text: '물러난다' }]);
+  }
   const s01 = s01Interaction(entityId, state);
   if (s01) return s01;
   switch (entityId) {
@@ -309,6 +314,12 @@ function goblinDialogue(state: GameState): DialogueTree {
       effects: [{ type: 'SET_FLAG', key: 'chip_pressed', value: true }],
     });
   }
+
+  // ── 그리즐의 부탁 (창고 열쇠의 대결 외 경로) ──
+  for (const c of favorGrizzleChoices(state)) {
+    base.nodes.root.choices.splice(base.nodes.root.choices.length - 1, 0, c);
+  }
+  for (const n of favorGrizzleNodes(state)) base.nodes[n.id] = n;
 
   if (f.asked_grizzle_king !== true) {
     base.nodes.root.choices.splice(base.nodes.root.choices.length - 1, 0, {
@@ -588,6 +599,8 @@ function boardInteraction(state: GameState): DialogueTree {
 }
 
 function cratesInteraction(state: GameState): DialogueTree {
+  const fav = favorStallInteraction(state);
+  if (fav) return fav;
   if (state.flags.lost_to_goblin === true) {
     return tree('부서진 상자 더미', '부서진 상자 틈에 낙서가 있다. "그리즐은 손님이 오기 전에 꼭 상자를 다시 옮긴다. 바닥 자국을 봐라. — 어느 패배자"', [
       { text: '유용한 정보다' },

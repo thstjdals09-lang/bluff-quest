@@ -215,6 +215,8 @@ export function reducer(state: GameState, action: GameAction): GameState {
         // 보상: 낡은 열쇠 + (거짓말을 간파한 경우) 기념품 칩
         if (!next.inventory.includes('old_key') && !next.flags.warehouse_opened) {
           next = grantItem(next, 'old_key');
+          // 열쇠를 처음 준 경로만 기록한다 (그리즐의 부탁 경로와 중복 지급·덮어쓰기 없음)
+          if (next.flags.key_route === undefined) next = { ...next, flags: { ...next.flags, key_route: 'duel' } };
         }
         const caught = !scenario.statement.isTrue;
         if (caught && !next.inventory.includes('goblin_tooth_chip')) {

@@ -1215,3 +1215,35 @@ button.active { border-color: var(--gold); color: var(--gold-bright); }
   }
   .arrival-note { margin-top: 2px; }
 }
+
+/* 가로·낮은 화면의 대화 장면: 하단 46% 패널로는 선택지가 스크롤 아래로 숨는다 →
+   인물·아이콘은 왼쪽, 대사와 선택지는 오른쪽 전체 높이 패널로 나눈다 */
+@media (max-height: 520px) and (orientation: landscape) {
+  .dialogue-bust {
+    left: 23%;
+    bottom: 0;
+    height: 94%;
+    max-width: 44%;
+  }
+  .dialogue-poi-icon {
+    left: 23%;
+    top: 34%;
+  }
+  .dialogue-panel {
+    left: 45%;
+    top: 0;
+    max-height: none;
+    padding: 12px 16px calc(env(safe-area-inset-bottom) + 12px);
+    border-top: none;
+    border-left: 1px solid var(--gold-dim);
+    background: linear-gradient(90deg, rgba(16, 11, 6, 0.7), rgba(14, 9, 5, 0.97) 12%);
+    display: flex;
+    flex-direction: column;
+  }
+  /* 아래로 붙이되, 넘치면 위쪽도 스크롤로 닿도록 justify-content 대신 auto 여백 사용 */
+  .dialogue-panel > :first-child { margin-top: auto; }
+  .dialogue-name { align-self: flex-start; margin-bottom: 6px; }
+  .dialogue-body { font-size: 14px; line-height: 1.55; margin-bottom: 10px; }
+  .dialogue-choices { gap: 5px; }
+  .dialogue-choices button { padding: 8px 10px; font-size: 13px; }
+}
