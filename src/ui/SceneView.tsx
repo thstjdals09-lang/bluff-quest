@@ -12,6 +12,13 @@ function clamp(v: number, min: number, max: number): number {
 }
 
 /**
+ * 가로 화면에서 세로 배경을 폭에 맞추면 월드가 화면 높이의 3배 이상으로 커져
+ * 위쪽 NPC·진열대가 상단 HUD 뒤로 밀린다. 월드 높이를 화면 높이의 이 배수로 제한하고
+ * 남는 좌우는 흐린 배경으로 채운다 (세로 화면은 이 분기에 들어오지 않음).
+ */
+const LANDSCAPE_MAX_WORLD_H = 2.0;
+
+/**
  * 전체 화면 탐험 씬 렌더러 (Phase 4 카메라 시스템).
  *
  * - 씬 월드(배경 플레이트 + 스프라이트)를 뷰포트보다 크게 렌더링하고
@@ -67,12 +74,16 @@ export function SceneView(props: {
     if (worldW < frame.w) {
       worldW = frame.w;
       worldH = worldW / scene.bgAspect;
+      if (worldH > frame.h * LANDSCAPE_MAX_WORLD_H) {
+        worldH = frame.h * LANDSCAPE_MAX_WORLD_H;
+        worldW = worldH * scene.bgAspect;
+      }
     }
     p = project(player.x, player.y);
     const px = (p.x / 100) * worldW;
     // 카메라는 캐릭터 몸통 중심을 따라간다 (발 위치보다 약간 위)
     const py = (p.y / 100) * worldH - (scene.playerHeight * p.scale * worldH) / 100 / 2;
-    tx = clamp(frame.w / 2 - px, frame.w - worldW, 0);
+    tx = worldW < frame.w ? (frame.w - worldW) / 2 : clamp(frame.w / 2 - px, frame.w - worldW, 0);
     ty = clamp(frame.h * 0.55 - py, frame.h - worldH, 0);
   }
 
@@ -89,6 +100,7 @@ export function SceneView(props: {
 
   return (
     <div ref={frameRef} className="scene-frame">
+      {worldW > 0 && worldW < frame.w && <img className="scene-backdrop" src={scene.bg} alt="" draggable={false} />}
       <div
         className="scene-world"
         style={{
