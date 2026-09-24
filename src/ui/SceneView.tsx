@@ -6,6 +6,7 @@ import { PLAYER_SPRITES, SCENES, projectToScreen } from '../game/content/scenes'
 import { getDevView, subscribeDevView } from '../game/devview';
 import { setCameraInfo } from '../game/uidebug';
 import { isDevMode } from '../App';
+import { StubScene } from './StubScene';
 
 function clamp(v: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, v));
@@ -94,7 +95,20 @@ export function SceneView(props: {
     // eslint 없음 — 의도적으로 매 렌더 갱신
   });
 
-  if (!scene) return null;
+  if (!scene) {
+    // 그림이 없는 임시 장면(STORY_STUB)
+    return location.stub ? (
+      <StubScene
+        location={location}
+        player={player}
+        facing={props.facing}
+        moving={props.moving}
+        highlightId={props.highlightId}
+        exitLabel={props.exitLabel}
+        locationTitle={props.locationTitle}
+      />
+    ) : null;
+  }
   // 상호작용 대상 마커는 대상 앞에 선 플레이어 스프라이트에 가려지지 않도록 항상 플레이어보다 위에 그린다
   const markerZ = (z: number) => Math.max(z, p.z) + 2;
   const dev = getDevView();

@@ -3,6 +3,7 @@ import { s01Records } from './s01';
 import { favorRecords } from './favor';
 import { hbRecords } from './handbill';
 import { fxRecords } from './finExchange';
+import { moonlessRecords } from './moonless';
 
 /**
  * 수집한 정보 기록 — 일지에 표시된다.
@@ -57,7 +58,7 @@ export const STORY_RECORDS: StoryRecordDef[] = [
 ];
 
 /** 기록이 속한 사건 (없으면 general — 이야기·지역 전반의 기록) */
-export type RecordScope = 'general' | 's01' | 'favor' | 'handbill';
+export type RecordScope = 'general' | 's01' | 'favor' | 'handbill' | 'moonless';
 
 export interface ScopedRecord {
   kind: RecordKind;
@@ -75,6 +76,7 @@ export function getScopedRecords(state: GameState): ScopedRecord[] {
     ...s01Records(state).map(tag('s01')),
     ...favorRecords(state).map(tag('favor')),
     ...hbRecords(state).map(tag('handbill')),
+    ...moonlessRecords(state).map(tag('moonless')),
     // 핀과의 시장 소식 거래 — 언급한 사건 묶음에 붙는다
     ...fxRecords(state),
   ];

@@ -78,6 +78,14 @@ EVENTS.market_firstlook = {
   footnote: '고블린 시장에 도착했다. 자유롭게 탐험해 보자.',
 };
 
+EVENTS.moonless_night = {
+  id: 'moonless_night',
+  icon: '🌑',
+  title: '달 없는 밤',
+  text: '해가 지고, 부두의 등불이 하나씩 꺼진다. 하늘에 달이 없다.\n\n부두 끝 창고 너머, 문틈으로 가느다란 불빛이 새어 나온다. 문 앞에 누군가 서서 종이를 확인하고 있다.',
+  footnote: '부두 끝으로 가는 길이 열렸다. 항구의 널판 부두 남쪽 끝에서도 갈 수 있다.',
+};
+
 export function getEventById(id: string): EventDef | undefined {
   return EVENTS[id];
 }

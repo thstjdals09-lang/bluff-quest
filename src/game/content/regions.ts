@@ -132,11 +132,11 @@ export const REGIONS: RegionDef[] = [
     contents: [
       { name: '밤의 부두 탐험', desc: '보드워크를 걸으며 항구의 인물·장소와 상호작용한다.', status: 'playable' },
       { name: '정보상 올드 핀', desc: '값을 부르는 자 — 무엇을 걸고 무엇을 숨길지 판단하는 거래.', status: 'playable' },
-      { name: '밤의 부두 — 비밀 경기', desc: '초대장이 가리키는 그 장소.', status: 'coming_soon' },
+      { name: '밤의 부두 — 비밀 경기', desc: '초대장을 든 사람들이 자리를 두고 따지는 판.', status: 'playable' },
       { name: '선술집', desc: '해적들의 소란스러운 승부가 벌어지는 곳.', status: 'coming_soon' },
       { name: '챔피언전', desc: '해적 선장과의 승부.', status: 'coming_soon' },
     ],
-    questIds: ['q_night_pier'],
+    questIds: ['q_night_pier', 'q_moonless'],
     entry: { locationId: 'port_docks', x: 3, y: 6 },
   },
   {

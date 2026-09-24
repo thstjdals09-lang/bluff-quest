@@ -21,10 +21,11 @@ export function DialogueScene(props: {
   const node = resolveDialogueNode(props.entityId, props.state, props.nodeId, props.snapshot);
   const npc = NPCS.find((n) => n.id === props.entityId);
   const scene = SCENES[props.state.player.location];
-  const entity = LOCATIONS[props.state.player.location]?.entities.find((e) => e.id === props.entityId);
+  const loc = LOCATIONS[props.state.player.location];
+  const entity = loc?.entities.find((e) => e.id === props.entityId);
 
   return (
-    <div className="dialogue-scene">
+    <div className="dialogue-scene" style={loc?.stub ? { background: loc.stub.tone } : undefined}>
       {scene && <img className="dialogue-bg" src={scene.bg} alt="" draggable={false} />}
       <div className="dialogue-vignette" />
 

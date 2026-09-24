@@ -61,7 +61,10 @@ export const REGION_MAP_POS: Record<string, { x: number; y: number }> = {
   market: { x: 50, y: 50 },
   warehouse: { x: 38, y: 16 },
   central_market: { x: 74, y: 20 },
-  port_docks: { x: 50, y: 50 },
+  port_docks: { x: 50, y: 28 },
+  night_pier_end: { x: 50, y: 62 },
+  night_pier_hall: { x: 28, y: 86 },
+  sailor_shelter: { x: 74, y: 86 },
 };
 
 export type MapNodeStatus = 'current' | 'visited' | 'known';

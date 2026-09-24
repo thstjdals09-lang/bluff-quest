@@ -4,6 +4,7 @@ import { FAVOR_CART_ID, favorCartInteraction, favorGrizzleChoices, favorGrizzleN
 import { s01Interaction } from './s01';
 import { hbAugmentTree, hbBoardAugment, hbEmptyStall } from './handbill';
 import { fxAugmentFin } from './finExchange';
+import { moonlessAugmentFin, moonlessInteraction } from './moonless';
 
 export interface DialogueTree {
   entry: string;
@@ -48,6 +49,9 @@ export function getInteraction(entityId: string, state: GameState): DialogueTree
   }
   const s01 = s01Interaction(entityId, state);
   if (s01) return hbAugmentTree(entityId, state, s01);
+  // STORY-S2 EP1 '달 없는 밤' — 부두 끝·초대장 홀·선원 대기실
+  const ml = moonlessInteraction(entityId, state);
+  if (ml) return ml;
   switch (entityId) {
     case 'old_card':
       return oldCardInteraction(state);
@@ -70,7 +74,7 @@ export function getInteraction(entityId: string, state: GameState): DialogueTree
     case 'ledger_scrap':
       return ledgerInteraction(state);
     case 'fin':
-      return fxAugmentFin(state, finDialogue(state));
+      return moonlessAugmentFin(state, fxAugmentFin(state, finDialogue(state)));
     case 'pier_notice':
       return pierNoticeInteraction(state);
     case 'cargo':
@@ -827,8 +831,12 @@ function finDialogue(state: GameState): DialogueTree {
     let greet: string;
     if (state.quests.q_night_pier?.stage === 'done') {
       greet = f.invitation_shown === true
-        ? '"어이, \'자리\'의 주인 나리." 핀이 금니를 드러낸다. "네 초대장 얘기, 벌써 값이 좀 나가더군. 부두에 비밀은 없다니까." ...보여준 대가는 소문이 되어 돌고 있다. "다음 판 소식이 들리면 알려주지." 핀이 부두 끝을 흘끔 본다. 아직 달이 밝다.'
-        : '"어이, 또 왔군." 핀이 고개를 까딱인다. "밤의 부두 판 소식이 들리면 제일 먼저 알려주지. 값은 그때 정하고." 핀이 부두 끝을 흘끔 본다. 아직 달이 밝다.';
+        ? f.ep1_departed === true
+          ? '"어이, \'자리\'의 주인 나리." 핀이 금니를 드러낸다. "부두 끝엔 다녀왔나? 거기서 본 건 거기 두고 와. 여긴 장사하는 데니까."'
+          : '"어이, \'자리\'의 주인 나리." 핀이 금니를 드러낸다. "네 초대장 얘기, 벌써 값이 좀 나가더군. 부두에 비밀은 없다니까." ...보여준 대가는 소문이 되어 돌고 있다. 핀이 부두 끝을 흘끔 본다. 오늘은 달이 없다.'
+        : f.ep1_departed === true
+          ? '"어이, 또 왔군." 핀이 고개를 까딱인다. "부두 끝엔 다녀왔나? 거기서 본 건 거기 두고 와. 여긴 장사하는 데니까."'
+          : '"어이, 또 왔군." 핀이 고개를 까딱인다. "밤의 부두 판 얘기라면, 마음 정했을 때 말해." 핀이 부두 끝을 흘끔 본다. 오늘은 달이 없다.';
     } else {
       greet = '"또 왔군, 애송이. 뭘 사러 왔나 — 소문? 비밀? 아니면 용기?"';
     }
@@ -866,6 +874,7 @@ function finDialogue(state: GameState): DialogueTree {
         { type: 'SET_FLAG', key: 'invitation_shown', value: true },
         { type: 'SET_FLAG', key: 'invitation_meaning_known', value: 'fact' },
         { type: 'SET_QUEST_STAGE', questId: 'q_night_pier', stage: 'done' },
+        ...(state.quests.q_moonless ? [] : [{ type: 'SET_QUEST_STAGE', questId: 'q_moonless', stage: 'ready' } as const]),
       ],
     });
   }
@@ -904,6 +913,7 @@ function deepInfoEffects(state: GameState): NonNullable<DialogueChoice['effects'
     effects.push({ type: 'SET_FLAG', key: 'invitation_meaning_known', value: 'claim' });
   }
   effects.push({ type: 'SET_QUEST_STAGE', questId: 'q_night_pier', stage: 'done' });
+  if (!state.quests.q_moonless) effects.push({ type: 'SET_QUEST_STAGE', questId: 'q_moonless', stage: 'ready' });
   return effects;
 }
 

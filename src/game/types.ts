@@ -172,6 +172,8 @@ export interface LocationDef {
   /** 막힌 미래 길 (선택) */
   futureWays?: FutureWayDef[];
   playerStart: { x: number; y: number };
+  /** STORY_STUB — 배경 그림 없이 단색·이름표로 그리는 임시 장면 (ui/StubScene) */
+  stub?: { tone: string };
 }
 
 // ── 아이템/퀘스트 콘텐츠 ────────────────────────────────────────

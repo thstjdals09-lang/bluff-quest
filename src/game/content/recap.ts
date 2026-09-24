@@ -15,7 +15,7 @@ export function recapAvailable(state: GameState): boolean {
   return state.quests.q_night_pier?.stage === 'done';
 }
 
-const MAIN_PATH = ['q_prologue', 'q_invitation', 'q_night_pier'];
+const MAIN_PATH = ['q_prologue', 'q_invitation', 'q_night_pier', 'q_moonless'];
 
 export interface Recap {
   path: { name: string; stageTitle: string; done: boolean }[];

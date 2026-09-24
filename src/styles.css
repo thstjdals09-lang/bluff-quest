@@ -575,7 +575,8 @@ button.active { border-color: var(--gold); color: var(--gold-bright); }
   padding: 14px 14px calc(env(safe-area-inset-bottom) + 16px);
   background: linear-gradient(180deg, rgba(16, 11, 6, 0.55), rgba(14, 9, 5, 0.97) 28%);
   border-top: 1px solid var(--gold-dim);
-  max-height: 46%;
+  /* 이야기 장면의 긴 대사에서도 진행 버튼이 첫 화면에 보이도록 (EP1) */
+  max-height: 52%;
   overflow-y: auto;
 }
 .dialogue-name {
@@ -1567,4 +1568,67 @@ button.active { border-color: var(--gold); color: var(--gold-bright); }
   .bag-slot .item-crest { width: 38px; height: 38px; }
   .bag-item-name { font-size: 17px; }
   .bag-item-desc { font-size: 13px; line-height: 1.6; }
+}
+
+/* ═══ STORY_STUB 임시 장면 (EP1) — 새 그림 없이 단색·이름표 ═══ */
+.stub-frame { position: absolute; inset: 0; overflow: hidden; }
+.stub-grid {
+  position: absolute;
+  border-radius: 10px;
+  background-image:
+    linear-gradient(rgba(240, 200, 120, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(240, 200, 120, 0.07) 1px, transparent 1px);
+  background-size: var(--cell) var(--cell);
+  background-color: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 0 0 1px rgba(216, 168, 86, 0.25), 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.stub-wall { position: absolute; background: rgba(0, 0, 0, 0.45); border-bottom: 2px solid rgba(216, 168, 86, 0.25); }
+.stub-ent { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; }
+.stub-token {
+  width: 72%;
+  height: 72%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, rgba(90, 66, 34, 0.95), rgba(26, 18, 10, 0.95));
+  border: 1.5px solid rgba(216, 168, 86, 0.55);
+  font-size: calc(var(--cell) * 0.36);
+  line-height: 1;
+}
+.stub-ent.exit .stub-token { border-radius: 8px 8px 3px 3px; background: linear-gradient(180deg, rgba(70, 50, 26, 0.95), rgba(20, 14, 8, 0.95)); }
+.stub-ent.poi .stub-token { border-radius: 10px; }
+.stub-ent.lit .stub-token { border-color: var(--gold-bright); box-shadow: 0 0 12px rgba(240, 200, 120, 0.6); }
+.stub-name {
+  position: absolute;
+  top: 88%;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(var(--cell) * 2.2);
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(10, 7, 4, 0.8);
+  color: var(--gold-bright);
+  font-size: 10px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+.stub-marker { position: absolute; bottom: 92%; left: 50%; transform: translateX(-50%); font-size: 16px; z-index: 5; white-space: nowrap; }
+.stub-player { position: absolute; transform: translateX(-50%) translateY(-100%); z-index: 3; pointer-events: none; transition: left 0.18s linear, top 0.18s linear; }
+.stub-player.moving { animation: bob 0.22s ease-in-out infinite alternate; }
+.stub-badge {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(env(safe-area-inset-top) + 44px);
+  z-index: 2000;
+  font-size: 10px;
+  color: var(--dim);
+  border: 1px dashed rgba(216, 168, 86, 0.35);
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: rgba(10, 7, 4, 0.6);
 }

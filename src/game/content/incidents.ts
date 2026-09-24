@@ -9,12 +9,13 @@ import type { RecordKind, ScopedRecord } from './records';
  * 범인·진실을 새로 추정한 문장을 만들지 않는다.
  */
 
-export type IncidentId = 's01' | 'favor' | 'handbill';
+export type IncidentId = 's01' | 'favor' | 'handbill' | 'moonless';
 
 const INCIDENT_QUESTS: { id: IncidentId; questId: string }[] = [
   { id: 's01', questId: 'q_s01' },
   { id: 'favor', questId: 'q_grizzle_favor' },
   { id: 'handbill', questId: 'q_handbill' },
+  { id: 'moonless', questId: 'q_moonless' },
 ];
 
 export interface IncidentView {

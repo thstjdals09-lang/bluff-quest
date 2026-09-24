@@ -3,6 +3,7 @@ import { LOCATIONS } from './content/world';
 import { getExit, isExitOpen } from './content/navigation';
 import { onEnterCentralMarket } from './content/s01';
 import { hbOnTransition } from './content/handbill';
+import { moonlessReadyEffect } from './content/moonless';
 import { applyInfoAction, chooseBox, getScenario, leaveEncounter, startEncounter } from './encounter';
 import { logEvent } from './log';
 
@@ -109,6 +110,8 @@ function gotoLocation(state: GameState, locationId: string, x: number, y: number
     next = setQuestStage(next, 'q_night_pier', 'arrive');
     next = { ...next, flags: { ...next.flags, port_arrived: true } };
   }
+  // 밤의 부두 이야기를 이미 끝낸 세이브: 다음 장소 전환에서 '달 없는 밤'을 연다
+  if (moonlessReadyEffect(next)) next = setQuestStage(next, 'q_moonless', 'ready');
   return next;
 }
 

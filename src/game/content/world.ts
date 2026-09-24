@@ -1,4 +1,5 @@
 import type { GameState, ItemDef, LocationDef, QuestDef, QuestStageDef } from '../types';
+import { MOONLESS_LOCATIONS } from './moonlessPlaces';
 
 // ── 장소 정의 ──────────────────────────────────────────────────
 
@@ -188,11 +189,24 @@ export const LOCATIONS: Record<string, LocationDef> = {
       { id: 'tavern_door', kind: 'poi', x: 6, y: 2, icon: '🍺', name: '선술집 문' },
       { id: 'fin', kind: 'npc', x: 6, y: 4, icon: '🧔', name: '정보상 올드 핀' },
       { id: 'cargo', kind: 'poi', x: 0, y: 6, icon: '📦', name: '하역된 밀수 화물' },
+      // 배경의 널판 부두가 화면 아래로 이어진다 — 그 끝이 '부두 끝' (달 없는 밤에만)
+      { id: 'pier_end', kind: 'exit', x: 3, y: 9, icon: '🌑', name: '부두 끝' },
     ],
     // 지역 간 출입구: 해안길을 따라 고블린 시장 진입로로 (돌아오는 길은 월드맵)
-    exits: [{ entityId: 'harbor_gate', to: 'market_road', arrive: { x: 2, y: 2 }, direction: '북' }],
+    exits: [
+      { entityId: 'harbor_gate', to: 'market_road', arrive: { x: 2, y: 2 }, direction: '북' },
+      {
+        entityId: 'pier_end',
+        to: 'night_pier_end',
+        arrive: { x: 3, y: 4 },
+        direction: '남',
+        requires: { flag: 'ep1_departed' },
+        lockedHint: '널판 부두가 어둠 속으로 이어진다. 끝의 창고는 아직 조용하다. 핀이 말한 달 없는 밤 얘기가 먼저다.',
+      },
+    ],
     playerStart: { x: 3, y: 6 },
   },
+  ...MOONLESS_LOCATIONS,
 };
 
 // ── 아이템 정의 ────────────────────────────────────────────────
@@ -320,10 +334,23 @@ export const QUESTS: Record<string, QuestDef> = {
       { id: 'done', title: '자리의 주인', objective: '초대장은 이름이 아니라 \'자리\'를 잇는다. 밤의 부두 비밀 경기가 다음 목적지다. 달 없는 밤을 기다리자.' },
     ],
   },
+  q_moonless: {
+    id: 'q_moonless',
+    name: '달 없는 밤',
+    type: 'main',
+    regionId: 'trickster_port',
+    stages: [
+      { id: 'ready', title: '출발 준비', objective: '핀이 말한 달 없는 밤이다. 마음이 정해지면 핀에게 말하자.' },
+      { id: 'hall', title: '초대장 홀', objective: '부두 끝 창고에서 초대장을 확인하고 있다. 자리를 달라는 종이가 자리보다 많다. 본 것 하나를 대고, 남의 말 하나를 따져 보자.' },
+      { id: 'admitted', title: '잠정 입장', objective: '잠정으로 안에 들어갈 수 있게 됐다. 누구의 자리였는지는 아직 모른다. 좌석방과 부두 끝을 살펴보자.' },
+      { id: 'outside', title: '판 밖에서', objective: '판에서 물러났다. 부두 끝의 게시대와 선원 대기실에서 다른 길을 찾아보자. 판은 다시 청할 수 있다.' },
+      { id: 'done', title: '지워진 이름의 원본', objective: '이름이 지워진 승부의 원본은 유령 카지노 서고에 있다. 그곳으로 가는 길을 찾아야 한다.' },
+    ],
+  },
 };
 
 /** HUD 퀘스트 트래커가 보여줄 현재 퀘스트 — 우선순위 순서로 미완료 퀘스트를 고른다. */
-const TRACK_ORDER = ['q_prologue', 'q_night_pier', 'q_invitation', 'q_grizzle_favor', 'q_s01', 'q_handbill', 'q_black_chip', 'q_mira_past'];
+const TRACK_ORDER = ['q_prologue', 'q_moonless', 'q_night_pier', 'q_invitation', 'q_grizzle_favor', 'q_s01', 'q_handbill', 'q_black_chip', 'q_mira_past'];
 
 /** 퀘스트가 끝난 단계인가 — 'done' 외에 사건형 퀘스트의 종결 단계도 포함한다 */
 const TERMINAL_STAGES: Record<string, string[]> = {
