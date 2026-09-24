@@ -25,11 +25,17 @@ describe('GM-P7 진행 흐름 다듬기', () => {
     expect(validateLocationGraph()).toEqual([]);
   });
 
-  it('초대장 전: 잠긴 안내만, 이동 없음 / 초대장 후: 부두 (3,1)로, 항구 첫 도착 처리도 같다', () => {
+  it('W0: 초대장 전에도 항구로 걸어갈 수 있지만 이야기는 시작되지 않는다 / 초대장 후: 항구 첫 도착 처리', () => {
     let s = at(done(createInitialState()), 'market_road', 2, 6);
-    const locked = getInteraction('coast_road', s);
-    expect(locked.nodes.root.text).toContain('해안길');
-    expect(reducer(s, { type: 'USE_EXIT', entityId: 'coast_road' }).player.location).toBe('market_road');
+    // 프롤로그 중에는 잠긴 안내만
+    const inPrologue = { ...s, quests: { ...s.quests, q_prologue: { stage: 'merchant', completed: [] } } };
+    expect(getInteraction('coast_road', inPrologue).nodes.root.text).toContain('해안길');
+    expect(reducer(inPrologue, { type: 'USE_EXIT', entityId: 'coast_road' }).player.location).toBe('market_road');
+    // 초대장 없이 구경: 이동은 되지만 본편·도착 연출·기록 없음
+    const visit = reducer(s, { type: 'USE_EXIT', entityId: 'coast_road' });
+    expect(visit.player.location).toBe('port_docks');
+    expect(visit.quests.q_night_pier).toBeUndefined();
+    expect(visit.flags.port_arrived).toBeUndefined();
     s = { ...s, flags: { ...s.flags, found_invitation: true } };
     s = reducer(s, { type: 'USE_EXIT', entityId: 'coast_road' });
     expect(s.player.location).toBe('port_docks');
@@ -90,9 +96,10 @@ describe('GM-P7 진행 흐름 다듬기', () => {
     expect(getRecap(sparse).incidents).toHaveLength(0);
   });
 
-  it('구버전 v6: 초대장 전·후 모두 안전하게 로드, 해안길은 초대장 후에만 열린다', () => {
+  it('구버전 v6: 초대장 전·후 모두 안전하게 로드, 해안길은 (W0) 프롤로그 뒤라면 언제나 열린다', () => {
     const before = importSave(JSON.stringify(at(done(createInitialState()), 'market_road', 2, 6)))!;
-    expect(isExitOpen(getExit('market_road', 'coast_road')!, before)).toBe(false);
+    expect(isExitOpen(getExit('market_road', 'coast_road')!, before)).toBe(true);
+    expect(before.quests.q_night_pier).toBeUndefined();
     const after = importSave(JSON.stringify({ ...before, flags: { ...before.flags, found_invitation: true }, inventory: ['invitation'] }))!;
     expect(isExitOpen(getExit('market_road', 'coast_road')!, after)).toBe(true);
     expect(recapAvailable(after)).toBe(false);

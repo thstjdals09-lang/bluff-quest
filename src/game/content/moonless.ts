@@ -649,8 +649,30 @@ function sailorLogTree(state: GameState): Tree {
   };
 }
 
+/**
+ * 핀에게 출발을 말하기 전(W0: 누구나 부두 끝에 걸어올 수 있다)의 부두 끝 사람들 —
+ * 이야기·단서·기록 없이 생활감 한 줄만. 달 없는 밤이 시작되면 같은 자리에서 사건이 열린다.
+ */
+const DAY_LINES: Record<string, [string, string]> = {
+  usher: ['문지기', '"오늘은 판이 없어." 문지기가 장부를 덮는다. "달 없는 밤에나 문을 열지."'],
+  hall_ledger: ['장부', '두꺼운 장부가 덮여 있다. 문지기가 손바닥으로 누른다. "구경거리 아니야."'],
+  seat_a: ['바늘', '마른 사내가 의자에 기대 졸고 있다. 말을 걸어도 눈을 뜨지 않는다.'],
+  seat_b: ['물결', '"심부름 중이야. 할 일이 없으면 저리 가."'],
+  seat_c: ['갈매기', '누군가 품속을 누른 채 벽 쪽을 보고 앉아 있다. 대답이 없다.'],
+  seats_door: ['좌석방 문', '안쪽 문이 잠겨 있다. 안쪽은 조용하다.'],
+  notice_stand: ['기록 게시대', '찾는 사람 벽보가 겹겹이 붙어 있다. 맨 위 벽보:\n\n"찾는 사람 — 이름 모름. 검은 돛 배에서 내린 뒤 행방불명."'],
+  leo: ['벽보 붙이는 사람', '벽보를 붙이던 사람이 너를 흘끔 본다. "…벽보 붙이는 중이야."'],
+  dice_sailor: ['주사위 굴리는 선원', '"주사위 할래? 물때가 안 좋아서 다들 놀고 있어."'],
+  hamel: ['그물 깁는 선원', '구석에서 누군가 그물을 깁고 있다. "…뭘 봐. 주사위 할 거면 저쪽이야."'],
+  sailor_log: ['벤치의 항해 일지', '펼쳐진 항해 일지. 물때와 날씨 기록이 빽빽하다.'],
+};
+
 /** EP1 장소의 대상 상호작용 (없으면 null) */
 export function moonlessInteraction(entityId: string, state: GameState): Tree | null {
+  const day = DAY_LINES[entityId];
+  if (day && !on(state, 'ep1_departed')) {
+    return { entry: 'root', nodes: { root: node('root', day[0], day[1], [{ text: '물러난다' }]) } };
+  }
   switch (entityId) {
     case 'usher':
       return usherTree(state);

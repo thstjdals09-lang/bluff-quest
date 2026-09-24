@@ -1,5 +1,6 @@
 import type { GameState, ItemDef, LocationDef, QuestDef, QuestStageDef } from '../types';
 import { MOONLESS_LOCATIONS } from './moonlessPlaces';
+import { SHELL_LOCATIONS } from './worldShellPlaces';
 
 // ── 장소 정의 ──────────────────────────────────────────────────
 
@@ -44,8 +45,9 @@ export const LOCATIONS: Record<string, LocationDef> = {
         to: 'port_docks',
         arrive: { x: 3, y: 1 },
         direction: '남',
-        requires: { flag: 'found_invitation' },
-        lockedHint: '걸어온 길을 되돌아가면 해안길이다. 지금은 시장에 볼일이 남아 있다.',
+        // W0: 장소 이동은 이야기 진행과 별개 — 프롤로그만 끝나면 초대장 없이도 항구에 갈 수 있다
+        requires: { afterPrologue: true },
+        lockedHint: '걸어온 길을 되돌아가면 해안길이다. 먼저 시장에 들어가 보자.',
       },
     ],
     playerStart: { x: 2, y: 6 },
@@ -189,8 +191,10 @@ export const LOCATIONS: Record<string, LocationDef> = {
       { id: 'tavern_door', kind: 'poi', x: 6, y: 2, icon: '🍺', name: '선술집 문' },
       { id: 'fin', kind: 'npc', x: 6, y: 4, icon: '🧔', name: '정보상 올드 핀' },
       { id: 'cargo', kind: 'poi', x: 0, y: 6, icon: '📦', name: '하역된 밀수 화물' },
-      // 배경의 널판 부두가 화면 아래로 이어진다 — 그 끝이 '부두 끝' (달 없는 밤에만)
-      { id: 'pier_end', kind: 'exit', x: 3, y: 9, icon: '🌑', name: '부두 끝' },
+      // 배경의 널판 부두가 화면 아래로 이어진다 — 그 끝이 '부두 끝' (이야기와 상관없이 걸어갈 수 있다)
+      { id: 'pier_end', kind: 'exit', x: 3, y: 9, icon: '🌊', name: '부두 끝' },
+      // 왼쪽에 정박한 배 — 유령 카지노로 가는 나룻배
+      { id: 'ferry_casino', kind: 'exit', x: 0, y: 3, icon: '⛵', name: '나룻배 (유령 카지노행)' },
     ],
     // 지역 간 출입구: 해안길을 따라 고블린 시장 진입로로 (돌아오는 길은 월드맵)
     exits: [
@@ -200,13 +204,13 @@ export const LOCATIONS: Record<string, LocationDef> = {
         to: 'night_pier_end',
         arrive: { x: 3, y: 4 },
         direction: '남',
-        requires: { flag: 'ep1_departed' },
-        lockedHint: '널판 부두가 어둠 속으로 이어진다. 끝의 창고는 아직 조용하다. 핀이 말한 달 없는 밤 얘기가 먼저다.',
       },
+      { entityId: 'ferry_casino', to: 'casino_entry', arrive: { x: 1, y: 3 }, direction: '서' },
     ],
     playerStart: { x: 3, y: 6 },
   },
   ...MOONLESS_LOCATIONS,
+  ...SHELL_LOCATIONS,
 };
 
 // ── 아이템 정의 ────────────────────────────────────────────────

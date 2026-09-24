@@ -106,7 +106,8 @@ function gotoLocation(state: GameState, locationId: string, x: number, y: number
   // GM-P4 벽보 사건: 장소 전환에서만 상태가 전진한다 (불러오기로는 움직이지 않음)
   next = hbOnTransition(state.player.location, next);
   // 항구 첫 도착: 메인 스토리 다음 장 자동 시작 + 도착 연출 플래그
-  if (regionId === 'trickster_port' && !next.quests.q_night_pier) {
+  const hasInvitation = next.flags.found_invitation === true || next.inventory.includes('invitation');
+  if (regionId === 'trickster_port' && !next.quests.q_night_pier && hasInvitation) {
     next = setQuestStage(next, 'q_night_pier', 'arrive');
     next = { ...next, flags: { ...next.flags, port_arrived: true } };
   }

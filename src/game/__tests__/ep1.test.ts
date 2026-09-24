@@ -48,11 +48,18 @@ function depart(s: GameState): GameState {
 const inHall = (s: GameState) => ({ ...s, player: { ...s.player, location: 'night_pier_hall', x: 3, y: 2 } });
 
 describe('STORY-S2 EP1 달 없는 밤', () => {
-  it('장소 그래프 정상, 부두 끝 출구는 출발 전 잠김', () => {
+  it('장소 그래프 정상, 부두 끝은 (W0) 출발 전에도 걸어갈 수 있지만 사람들은 이야기를 꺼내지 않는다', () => {
     expect(validateLocationGraph()).toEqual([]);
     const exit = getExit('port_docks', 'pier_end')!;
-    expect(isExitOpen(exit, doneSave())).toBe(false);
-    expect(isExitOpen(exit, doneSave({ ep1_departed: true }))).toBe(true);
+    expect(isExitOpen(exit, doneSave())).toBe(true);
+    const day = { ...doneSave(), player: { ...doneSave().player, location: 'night_pier_hall', x: 3, y: 2 } };
+    for (const id of ['usher', 'hall_ledger', 'seat_a', 'seat_b', 'seat_c', 'seats_door', 'notice_stand', 'leo', 'dice_sailor', 'hamel', 'sailor_log']) {
+      const t = getInteraction(id, day);
+      const root = t.nodes[t.entry];
+      expect(root.choices.map((c) => c.text)).toEqual(['물러난다']);
+      expect(root.choices[0].effects).toBeUndefined();
+      expect(root.text).not.toMatch(/17|유령 카지노|하멜|레오|그리즐/);
+    }
     for (const id of ['night_pier_end', 'night_pier_hall', 'sailor_shelter']) expect(LOCATIONS[id].stub).toBeTruthy();
   });
 

@@ -64,7 +64,7 @@ describe('프롤로그 (새 모험)', () => {
 
   it('핀의 첫 만남 분기(간파)도 스냅샷으로 이어진다', () => {
     let s = createInitialState();
-    s = { ...s, flags: { ...s.flags, pier_rumor: true } };
+    s = { ...s, flags: { ...s.flags, pier_rumor: true, found_invitation: true } };
     const before = getInteraction('fin', s);
     s = choose(s, 'fin', '낚시꾼');
     const node = resolveDialogueNode('fin', s, 'called', before);

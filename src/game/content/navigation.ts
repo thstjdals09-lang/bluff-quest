@@ -19,7 +19,14 @@ export function isExitOpen(exit: ExitDef, state: GameState): boolean {
   if (!r) return true;
   if (r.unlocked && !state.unlocked.includes(r.unlocked)) return false;
   if (r.flag && state.flags[r.flag] !== true) return false;
+  if (r.afterPrologue && isInPrologue(state)) return false;
   return true;
+}
+
+/** 새 모험의 프롤로그(시장으로 가는 길) 진행 중인가 — 기존 세이브(프롤로그 없음)는 아니다 */
+export function isInPrologue(state: GameState): boolean {
+  const q = state.quests.q_prologue;
+  return q !== undefined && q.stage !== 'done';
 }
 
 /** 지역 이름을 포함한 장소 표시 이름 (예: "고블린 시장 · 입구 장터") */
@@ -28,6 +35,7 @@ export const REGION_NAMES: Record<string, string> = {
   trickster_port: '사기꾼들의 항구',
   ghost_casino: '유령 카지노',
   golden_city: '황금 도시',
+  gamblers_tower: '승부사의 탑',
 };
 
 export function locationLabel(locationId: string): string {
@@ -65,6 +73,16 @@ export const REGION_MAP_POS: Record<string, { x: number; y: number }> = {
   night_pier_end: { x: 50, y: 62 },
   night_pier_hall: { x: 28, y: 86 },
   sailor_shelter: { x: 74, y: 86 },
+  casino_entry: { x: 50, y: 80 },
+  casino_replay: { x: 50, y: 48 },
+  casino_archive: { x: 72, y: 16 },
+  city_street: { x: 50, y: 62 },
+  city_contract: { x: 26, y: 22 },
+  city_meeting: { x: 74, y: 22 },
+  tower_entrance: { x: 50, y: 86 },
+  tower_testimony: { x: 50, y: 62 },
+  tower_archive: { x: 50, y: 38 },
+  tower_top: { x: 50, y: 12 },
 };
 
 export type MapNodeStatus = 'current' | 'visited' | 'known';

@@ -5,6 +5,7 @@ import { s01Interaction } from './s01';
 import { hbAugmentTree, hbBoardAugment, hbEmptyStall } from './handbill';
 import { fxAugmentFin } from './finExchange';
 import { moonlessAugmentFin, moonlessInteraction } from './moonless';
+import { shellInteraction } from './worldShell';
 
 export interface DialogueTree {
   entry: string;
@@ -52,6 +53,9 @@ export function getInteraction(entityId: string, state: GameState): DialogueTree
   // STORY-S2 EP1 '달 없는 밤' — 부두 끝·초대장 홀·선원 대기실
   const ml = moonlessInteraction(entityId, state);
   if (ml) return ml;
+  // W0 셸 장소의 생활감 한 줄 (이야기·기록 없음)
+  const sh = shellInteraction(entityId);
+  if (sh) return sh;
   switch (entityId) {
     case 'old_card':
       return oldCardInteraction(state);
@@ -769,7 +773,17 @@ function finDialogue(state: GameState): DialogueTree {
   const nodes: Record<string, DialogueNode> = {};
   let entry: string;
 
-  if (!met) {
+  const hasInvitation = f.found_invitation === true || state.inventory.includes('invitation');
+  if (!met && !hasInvitation) {
+    // W0: 초대장 없이 구경 온 손님 — 초대장 이야기는 꺼내지 않는다
+    entry = 'first';
+    nodes.first = {
+      id: 'first',
+      speaker: '정보상 올드 핀',
+      text: '두루마리와 봉인된 편지가 널린 좌대 뒤에서, 늙은 뱃사람이 너를 천천히 훑어본다. 금니가 반짝인다.\n\n"처음 보는 얼굴이군. 부두 구경 왔나? 소문이 필요하면 값만 치러. 공짜 소문도 조금은 있고."',
+      choices: [{ text: '거래를 들어본다', next: 'menu', effects: [{ type: 'NPC_MET', npcId: 'fin' }] }, { text: '지나간다', effects: [{ type: 'NPC_MET', npcId: 'fin' }] }],
+    };
+  } else if (!met) {
     entry = 'first';
     nodes.first = {
       id: 'first',
@@ -851,7 +865,7 @@ function finDialogue(state: GameState): DialogueTree {
   // ── 거래 메뉴 ──
   const menuChoices: DialogueChoice[] = [];
   menuChoices.push({ text: '공짜 소문을 듣는다', next: 'info_free' });
-  if (f.night_pier_hint !== true) {
+  if (f.night_pier_hint !== true && state.quests.q_night_pier) {
     if (f.fin_bluff_called === true) {
       menuChoices.push({
         text: '간파의 값 — 밤의 부두 이야기를 청한다 (무료)',
@@ -892,7 +906,7 @@ function finDialogue(state: GameState): DialogueTree {
     text: '"공짜 소문이라... 좋지." 핀이 목을 가다듬는다. "선술집 문지기 녀석, 주사위 내기 3연패라 심기가 사나워. 오늘은 낯선 얼굴 안 받을 거다. 그리고 뱃사람들 사이에 도는 얘기 — 요즘 이름난 승부사들이 하나둘 소식을 끊는대. 배를 탄 것도 아닌데 말이야." 그가 씩 웃는다. "여기까지는 공짜."',
     choices: [
       { text: '다른 것도 듣는다', next: 'menu' },
-      { text: '충분하다', effects: [{ type: 'SET_QUEST_STAGE', questId: 'q_night_pier', stage: 'wager' }] },
+      { text: '충분하다', effects: state.quests.q_night_pier ? [{ type: 'SET_QUEST_STAGE', questId: 'q_night_pier', stage: 'wager' }] : [] },
     ],
   };
   nodes.info_deep = {

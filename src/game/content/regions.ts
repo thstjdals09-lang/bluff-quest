@@ -1,4 +1,5 @@
 import type { GameState } from '../types';
+import { isInPrologue } from './navigation';
 import { LOCATIONS } from './world';
 import marketImage from '../../assets/market-bg.jpg';
 import portImage from '../../assets/port-preview.jpg';
@@ -146,16 +147,17 @@ export const REGIONS: RegionDef[] = [
     tagline: '기록은 사라지지 않는다',
     themes: ['행동 패턴', '상대 읽기', '숨겨진 기록'],
     desc: '안개 속에 잠긴 폐업한 카지노. 죽어서도 테이블을 떠나지 못한 유령들이 옛 습관 그대로 게임을 한다. 상대의 과거를 읽는 자에게만 승산이 있는 곳.',
-    impl: 'preview',
+    impl: 'playable',
     image: ghostImage,
     marker: { x: 27, y: 35 },
     champion: CHAMPIONS.champ_ghost,
     contents: [
-      { name: '카지노 로비', desc: '유령 딜러들이 기다리는 홀.', status: 'coming_soon' },
+      { name: '카지노 입구·재현 홀·서고', desc: '임시 장면으로 돌아볼 수 있다.', status: 'playable' },
       { name: '패턴 관찰 대결', desc: '반복되는 습관에서 답을 찾는 심리전.', status: 'coming_soon' },
       { name: '챔피언전', desc: '유령 딜러와의 게임.', status: 'coming_soon' },
     ],
     questIds: [],
+    entry: { locationId: 'casino_entry', x: 3, y: 4 },
   },
   {
     id: 'golden_city',
@@ -164,30 +166,37 @@ export const REGIONS: RegionDef[] = [
     tagline: '모든 것에는 값이 있다',
     themes: ['확률', '기댓값', '자원 관리', '귀족의 승부'],
     desc: '금박 지붕 아래 귀족들이 조건과 확률을 흥정하는 도시. 이곳의 승부는 화려하지만 차갑다. 감정이 아니라 숫자가 이기는 곳이다.',
-    impl: 'preview',
+    impl: 'playable',
     image: goldenImage,
     marker: { x: 76, y: 38 },
     champion: CHAMPIONS.champ_golden,
     contents: [
+      { name: '큰길·계약 열람소·찻집', desc: '임시 장면으로 돌아볼 수 있다.', status: 'playable' },
       { name: '귀족 지구', desc: '고급 포커 클럽이 늘어선 거리.', status: 'coming_soon' },
       { name: '기댓값의 승부', desc: '조건이 붙은 특별한 대결.', status: 'coming_soon' },
       { name: '황금 경기장 챔피언전', desc: '황금 가면의 수학자와의 대결.', status: 'coming_soon' },
     ],
     questIds: [],
+    entry: { locationId: 'city_street', x: 3, y: 4 },
   },
   {
-    id: 'unknown_region',
+    // W0: 지도 구름 너머의 탑 — 임시 장면으로 입구부터 꼭대기까지 걸어 볼 수 있다
+    id: 'gamblers_tower',
     order: 'REGION 05',
-    name: '???',
-    tagline: '아직 알려지지 않은 땅',
-    themes: [],
-    desc: '지도의 이 부분은 구름에 가려져 있다. 어떤 승부사도 이곳을 다녀와서 이야기한 적이 없다.',
-    impl: 'unknown',
+    name: '승부사의 탑',
+    tagline: '구름 너머의 층계',
+    themes: ['재도전', '기록'],
+    desc: '황금 도시 뒤편 언덕 위, 구름에 가려진 탑. 층마다 다른 규칙의 대결이 열린다는 소문이 있다.',
+    impl: 'playable',
     image: null,
     marker: { x: 50, y: 10 },
     champion: null,
-    contents: [],
+    contents: [
+      { name: '탑 입구·증언실·봉인 서고·꼭대기 방', desc: '임시 장면으로 돌아볼 수 있다.', status: 'playable' },
+      { name: '층별 도전', desc: '규칙이 매번 달라지는 대결.', status: 'coming_soon' },
+    ],
     questIds: [],
+    entry: { locationId: 'tower_entrance', x: 3, y: 4 },
   },
 ];
 
@@ -211,14 +220,13 @@ export function getRegionAccess(regionId: string, state: GameState): RegionAcces
   switch (regionId) {
     case 'goblin_market':
       return { unlocked: true, hint: '' };
+    // W0: 장소 방문은 이야기 진행과 별개 — 프롤로그만 끝나면 모든 지역의 공용 공간에 갈 수 있다.
+    // 초대장·사건·기록은 각 장면의 이야기 조건으로 따로 판정한다.
     case 'trickster_port':
-      return state.flags.found_invitation === true
-        ? { unlocked: true, hint: '' }
-        : { unlocked: false, hint: '고블린 시장 어딘가에 항구로 이어지는 단서가 잠들어 있다.' };
     case 'ghost_casino':
-      return { unlocked: false, hint: '이후의 이야기에서 공개된다.' };
     case 'golden_city':
-      return { unlocked: false, hint: '이후의 이야기에서 공개된다.' };
+    case 'gamblers_tower':
+      return isInPrologue(state) ? { unlocked: false, hint: '먼저 시장에 들어가 보자.' } : { unlocked: true, hint: '' };
     default:
       return { unlocked: false, hint: '아직 알려지지 않은 지역이다.' };
   }

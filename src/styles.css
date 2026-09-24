@@ -1617,6 +1617,8 @@ button.active { border-color: var(--gold); color: var(--gold-bright); }
   pointer-events: none;
 }
 .stub-marker { position: absolute; bottom: 92%; left: 50%; transform: translateX(-50%); font-size: 16px; z-index: 5; white-space: nowrap; }
+.stub-marker.edge-l { left: 0; transform: none; }
+.stub-marker.edge-r { left: auto; right: 0; transform: none; }
 .stub-player { position: absolute; transform: translateX(-50%) translateY(-100%); z-index: 3; pointer-events: none; transition: left 0.18s linear, top 0.18s linear; }
 .stub-player.moving { animation: bob 0.22s ease-in-out infinite alternate; }
 .stub-badge {

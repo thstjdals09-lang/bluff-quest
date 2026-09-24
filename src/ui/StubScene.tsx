@@ -63,7 +63,12 @@ export function StubScene(props: {
               >
                 <span className="stub-token">{e.icon}</span>
                 <span className="stub-name">{e.name}</span>
-                {lit && <span className="stub-marker">{props.exitLabel ? <span className="exit-tag">{props.exitLabel}</span> : '❗'}</span>}
+                {lit && (
+                  // 가장자리 대상의 목적지 표시는 화면 안쪽으로 붙인다
+                  <span className={`stub-marker ${e.x === 0 ? 'edge-l' : e.x === cols - 1 ? 'edge-r' : ''}`}>
+                    {props.exitLabel ? <span className="exit-tag">{props.exitLabel}</span> : '❗'}
+                  </span>
+                )}
               </div>
             );
           })}

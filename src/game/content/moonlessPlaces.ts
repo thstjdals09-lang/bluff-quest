@@ -9,7 +9,7 @@ export const MOONLESS_LOCATIONS: Record<string, LocationDef> = {
     id: 'night_pier_end',
     name: '부두 끝',
     regionId: 'trickster_port',
-    arrivalNote: '달 없는 밤. 불 켜진 창고 문, 벽보가 겹겹이 붙은 기록 게시대, 화롯불이 새는 선원 대기실.',
+    arrivalNote: '널판 부두의 끝. 창고 문, 벽보가 겹겹이 붙은 기록 게시대, 화롯불이 새는 선원 대기실.',
     stub: { tone: '#0d1a24' },
     layout: [
       '#######', // 0: 창고 벽 (문)
@@ -37,7 +37,7 @@ export const MOONLESS_LOCATIONS: Record<string, LocationDef> = {
     id: 'night_pier_hall',
     name: '초대장 홀',
     regionId: 'trickster_port',
-    arrivalNote: '접수대의 문지기가 종이를 확인한다. 긴 의자에 세 사람이 서로 눈을 피한 채 앉아 있다.',
+    arrivalNote: '접수대의 문지기와 두꺼운 장부. 긴 의자에 사람들이 서로 눈을 피한 채 앉아 있다.',
     stub: { tone: '#1f1710' },
     layout: [
       '#######', // 0: 안쪽 벽 (좌석방 문)
@@ -50,10 +50,10 @@ export const MOONLESS_LOCATIONS: Record<string, LocationDef> = {
     entities: [
       { id: 'usher', kind: 'npc', x: 3, y: 1, icon: '🕯️', name: '문지기' },
       { id: 'hall_ledger', kind: 'poi', x: 4, y: 1, icon: '📖', name: '장부' },
-      { id: 'seat_a', kind: 'npc', x: 0, y: 2, icon: '🪡', name: '바늘' },
+      { id: 'seat_a', kind: 'npc', x: 0, y: 2, icon: '✂️', name: '바늘' },
       { id: 'seat_c', kind: 'npc', x: 6, y: 3, icon: '🕊️', name: '갈매기' },
       { id: 'seat_b', kind: 'npc', x: 0, y: 4, icon: '🌊', name: '물결' },
-      { id: 'seats_door', kind: 'poi', x: 6, y: 0, icon: '🪑', name: '좌석방 문' },
+      { id: 'seats_door', kind: 'poi', x: 6, y: 0, icon: '💺', name: '좌석방 문' },
       { id: 'hall_exit', kind: 'exit', x: 3, y: 5, icon: '🚪', name: '부두 끝으로' },
     ],
     exits: [{ entityId: 'hall_exit', to: 'night_pier_end', arrive: { x: 3, y: 1 }, direction: '남' }],
@@ -63,7 +63,7 @@ export const MOONLESS_LOCATIONS: Record<string, LocationDef> = {
     id: 'sailor_shelter',
     name: '선원 대기실',
     regionId: 'trickster_port',
-    arrivalNote: '달 없는 밤이라 배가 안 나간다. 화로 곁에서 주사위 소리, 구석에서 그물 깁는 소리.',
+    arrivalNote: '배가 안 나가는 날. 화로 곁에서 주사위 소리, 구석에서 그물 깁는 소리.',
     stub: { tone: '#241510' },
     layout: [
       '#######', // 0
@@ -73,7 +73,7 @@ export const MOONLESS_LOCATIONS: Record<string, LocationDef> = {
       '#######', // 4: 벽 (서쪽 문)
     ],
     entities: [
-      { id: 'hamel', kind: 'npc', x: 5, y: 1, icon: '🧶', name: '그물 깁는 선원' },
+      { id: 'hamel', kind: 'npc', x: 5, y: 1, icon: '🎣', name: '그물 깁는 선원' },
       { id: 'dice_sailor', kind: 'npc', x: 1, y: 2, icon: '🎲', name: '주사위 굴리는 선원' },
       { id: 'sailor_log', kind: 'poi', x: 6, y: 2, icon: '📓', name: '벤치의 항해 일지' },
       { id: 'shelter_exit', kind: 'exit', x: 0, y: 3, icon: '🚪', name: '부두 끝으로' },

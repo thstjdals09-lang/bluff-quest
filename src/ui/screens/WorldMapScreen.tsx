@@ -138,6 +138,11 @@ function RegionDetail(props: {
           </div>
         ) : showImage ? (
           <img className="region-image" src={region.image ?? undefined} alt={region.name} />
+        ) : access.unlocked ? (
+          <div className="region-image unknown-region">
+            <span>🗼</span>
+            <p className="dim">아직 그림이 없는 곳 — 임시 장면으로 걸어 볼 수 있다</p>
+          </div>
         ) : (
           <div className="region-image locked-region">
             <span>🔒</span>

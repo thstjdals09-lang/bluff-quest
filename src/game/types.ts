@@ -135,7 +135,7 @@ export interface ExitDef {
   /** 방향 안내용 (도착 배너·지역 지도) */
   direction: '북' | '남' | '동' | '서';
   /** 이 출입구가 열리는 조건 — 없으면 항상 열림 */
-  requires?: { unlocked?: string; flag?: string };
+  requires?: { unlocked?: string; flag?: string; /** 프롤로그(시장으로 가는 길)가 끝난 뒤에만 */ afterPrologue?: boolean };
   /** 잠겨 있을 때 짧은 안내 */
   lockedHint?: string;
 }

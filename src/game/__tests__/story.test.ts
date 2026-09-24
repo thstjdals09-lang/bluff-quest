@@ -43,14 +43,14 @@ describe('스토리 분기 (Phase 5)', () => {
   });
 
   it('핀의 떠보기 간파 선택지는 게시판 소문을 읽었을 때만 나타난다', () => {
-    let s = createInitialState();
+    let s = withFlags(createInitialState(), { found_invitation: true });
     expect(choiceTexts('fin', s).join()).not.toContain('낚시꾼');
     s = withFlags(s, { pier_rumor: true });
     expect(choiceTexts('fin', s).join()).toContain('낚시꾼');
   });
 
-  it('항구 첫 도착 시 메인 퀘스트가 자동 시작되고 방문 기록이 남는다', () => {
-    let s = createInitialState();
+  it('항구 첫 도착 시 메인 퀘스트가 자동 시작되고 방문 기록이 남는다 (초대장이 있을 때)', () => {
+    let s = withFlags(createInitialState(), { found_invitation: true });
     s = reducer(s, { type: 'GOTO_LOCATION', locationId: 'port_docks', x: 3, y: 8 });
     expect(s.quests.q_night_pier.stage).toBe('arrive');
     expect(s.visitedRegions).toContain('trickster_port');
