@@ -113,6 +113,35 @@ describe('W0 전 지역 이동 셸', () => {
     }
   });
 
+  it('W0b: 중앙 장터에서 GM-04~GM-11(숨겨진 창고·승부장 포함)을 걸어서 모두 돌고 돌아온다 — 이야기 상태 없음', () => {
+    let s = afterPrologue();
+    s = { ...s, player: { ...s.player, location: 'market', x: 6, y: 1 } };
+    s = walkThrough(s, 'central_market_passage');
+    const baseKeys = new Set(Object.keys(s.flags));
+    const baseQuests = new Set(Object.keys(s.quests));
+    const records = getScopedRecords(s).length;
+    const GM = ['gm07_street', 'gm09_gate', 'gm10_arena', 'gm08_club', 'gm04_shops', 'gm11_rest', 'gm05_alley', 'gm06_storeroom'];
+    for (const target of [...GM, 'central_market']) {
+      const path = route(s, s.player.location, target);
+      expect(path, `→ ${target}`).not.toBeNull();
+      for (const exit of path!) s = walkThrough(s, exit);
+      expect(s.player.location).toBe(target);
+    }
+    for (const id of GM) expect(s.visitedLocations).toContain(id);
+    // 시장 기존 사건(S01·벽보)은 중앙 장터 출입으로만 움직이는 기존 규칙 그대로 — 새 장소가 만드는 상태는 없다
+    const allowed = /^(travel_count|s01_|hb_)/;
+    for (const k of Object.keys(s.flags)) if (!baseKeys.has(k)) expect(k, k).toMatch(allowed);
+    for (const q of Object.keys(s.quests)) if (!baseQuests.has(q)) expect(['q_s01', 'q_handbill']).toContain(q);
+    expect(getScopedRecords(s).filter((r) => r.scope === 'general').length).toBe(getScopedRecords({ ...s, flags: { ...s.flags } }).filter((r) => r.scope === 'general').length);
+    expect(records).toBeGreaterThanOrEqual(0);
+    // 왕의 관문 → 승부장은 공개 입구로만 (클럽 뒷계단 없음), 휴게소는 상점가로만
+    expect(LOCATIONS.gm08_club.exits.map((e) => e.to)).not.toContain('gm10_arena');
+    expect(LOCATIONS.gm11_rest.exits.map((e) => e.to)).toEqual(['gm04_shops']);
+    expect(LOCATIONS.market.exits.map((e) => e.to)).not.toContain('gm11_rest');
+    // 숨겨진 거래처의 이름을 미리 말하지 않는다
+    expect(LOCATIONS.gm06_storeroom.name).not.toMatch(/숨겨진|거래/);
+  });
+
   it('초대장 없는 핀: 초대장 얘기를 꺼내지 않고, 밤의 부두 이야기도 팔지 않는다', () => {
     const s = { ...afterPrologue(), player: { ...afterPrologue().player, location: 'port_docks', x: 6, y: 5 } };
     const t = getInteraction('fin', s);

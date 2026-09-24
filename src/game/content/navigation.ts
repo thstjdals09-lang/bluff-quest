@@ -65,10 +65,18 @@ export function locationsInRegion(regionId: string): LocationDef[] {
 
 /** 지역 지도에서 장소 노드 위치 (%) — 게임 속 방향(북=위)과 맞춘다 */
 export const REGION_MAP_POS: Record<string, { x: number; y: number }> = {
-  market_road: { x: 50, y: 84 },
-  market: { x: 50, y: 50 },
-  warehouse: { x: 38, y: 16 },
-  central_market: { x: 74, y: 20 },
+  market_road: { x: 50, y: 92 },
+  market: { x: 50, y: 74 },
+  warehouse: { x: 24, y: 70 },
+  central_market: { x: 50, y: 52 },
+  gm05_alley: { x: 24, y: 52 },
+  gm06_storeroom: { x: 8, y: 38 },
+  gm04_shops: { x: 76, y: 52 },
+  gm11_rest: { x: 92, y: 66 },
+  gm07_street: { x: 50, y: 30 },
+  gm08_club: { x: 76, y: 30 },
+  gm09_gate: { x: 50, y: 10 },
+  gm10_arena: { x: 76, y: 10 },
   port_docks: { x: 50, y: 28 },
   night_pier_end: { x: 50, y: 62 },
   night_pier_hall: { x: 28, y: 86 },

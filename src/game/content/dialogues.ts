@@ -7,6 +7,8 @@ import { fxAugmentFin } from './finExchange';
 import { moonlessAugmentFin, moonlessInteraction } from './moonless';
 import { shellInteraction } from './worldShell';
 
+const CART_TEXT = '짐을 가득 실은 화물 수레가 길 대부분을 막고 있다. 짐꾼들은 "오늘은 못 치워!"라며 손을 내젓는다. 수레 왼쪽, 등불 기둥 옆으로 사람 하나 지나갈 좁은 틈이 있다.';
+
 export interface DialogueTree {
   entry: string;
   nodes: Record<string, DialogueNode>;
@@ -38,6 +40,10 @@ export function getInteraction(entityId: string, state: GameState): DialogueTree
   // 출입구: 이야기가 걸린 문은 전용 대화, 나머지는 공통 출입구 대화
   const exit = getExit(state.player.location, entityId);
   if (exit && !hasExitStoryHook(entityId, state)) return exitTree(state, exit);
+  // 중앙 장터 북쪽 화물 수레: 막힌 길이 아니라 그냥 수레 (옆 틈이 출구). 그리즐의 부탁 중에는 짐꾼 대화
+  if (entityId === FAVOR_CART_ID) {
+    return favorCartInteraction(state, '화물 수레', CART_TEXT) ?? tree('화물 수레', CART_TEXT, [{ text: '물러난다' }]);
+  }
   const way = getFutureWay(state.player.location, entityId);
   if (way) {
     // 막힌 길은 막힌 채로 둔다 — 그리즐의 부탁 중에는 수레 짐꾼과의 대화만 추가된다

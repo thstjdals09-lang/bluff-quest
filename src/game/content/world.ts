@@ -1,6 +1,7 @@
 import type { GameState, ItemDef, LocationDef, QuestDef, QuestStageDef } from '../types';
 import { MOONLESS_LOCATIONS } from './moonlessPlaces';
 import { SHELL_LOCATIONS } from './worldShellPlaces';
+import { GM_SHELL_LOCATIONS } from './gmShellPlaces';
 
 // ── 장소 정의 ──────────────────────────────────────────────────
 
@@ -98,7 +99,7 @@ export const LOCATIONS: Record<string, LocationDef> = {
     name: '중앙 장터',
     regionId: 'goblin_market',
     code: 'GM-03',
-    arrivalNote: '마주 보는 두 좌판에서 상인 둘이 언성을 높이고 있다. 길은 사방으로 뻗어 있지만 지금은 남쪽만 열려 있다.',
+    arrivalNote: '마주 보는 두 좌판에서 상인 둘이 언성을 높이고 있다. 길은 사방으로 뻗어 있다 — 북쪽 수레 옆, 서쪽 짐 더미 옆, 동쪽 바리케이드 옆으로 좁은 틈이 나 있다.',
     layout: [
       '##.#.####', // 0: 북쪽 길 — 화물 수레가 막고 있음 (4,0)
       '##......#', // 1
@@ -112,37 +113,21 @@ export const LOCATIONS: Record<string, LocationDef> = {
     ],
     entities: [
       { id: 'gm03_south', kind: 'exit', x: 4, y: 8, icon: '🏮', name: '입구 장터 쪽 골목' },
-      { id: 'gm03_north_cart', kind: 'poi', x: 4, y: 0, icon: '🛒', name: '길을 막은 화물 수레' },
-      { id: 'gm03_west_pile', kind: 'poi', x: 0, y: 2, icon: '📦', name: '쌓아 둔 짐 더미' },
-      { id: 'gm03_east_barricade', kind: 'poi', x: 8, y: 2, icon: '🚧', name: '목재 바리케이드' },
+      // W0b: 수레·짐 더미·바리케이드는 치워지지 않았다 — 그 옆의 실제 좁은 틈으로 걸어간다
+      { id: 'gm03_north_cart', kind: 'poi', x: 4, y: 0, icon: '🛒', name: '화물 수레' },
+      { id: 'gm03_north_gap', kind: 'exit', x: 2, y: 0, icon: '🏮', name: '수레 옆 틈' },
+      { id: 'gm03_west_pile', kind: 'exit', x: 0, y: 2, icon: '📦', name: '짐 더미 옆 틈' },
+      { id: 'gm03_east_barricade', kind: 'exit', x: 8, y: 2, icon: '🚧', name: '바리케이드 옆 틈' },
       { id: 's01_a', kind: 'npc', x: 2, y: 3, icon: '👴', name: '공방 상인' },
       { id: 's01_b', kind: 'npc', x: 6, y: 3, icon: '🧑', name: '되팔이 상인' },
       { id: 's01_guards', kind: 'poi', x: 4, y: 2, icon: '🎴', name: '두 개의 카드 가드' },
       { id: 's01_onlooker', kind: 'npc', x: 3, y: 5, icon: '🍢', name: '구경꾼' },
     ],
-    exits: [{ entityId: 'gm03_south', to: 'market', arrive: { x: 6, y: 1 }, direction: '남' }],
-    futureWays: [
-      {
-        entityId: 'gm03_north_cart',
-        code: 'GM-07',
-        label: '북쪽 길',
-        direction: '북',
-        lockedHint: '짐을 가득 실은 화물 수레가 길을 통째로 막고 있다. 짐꾼들은 "오늘은 못 치워!"라며 손을 내젓는다.',
-      },
-      {
-        entityId: 'gm03_west_pile',
-        code: 'GM-05',
-        label: '서쪽 골목',
-        direction: '서',
-        lockedHint: '통과 짐 상자가 골목 입구에 산처럼 쌓여 있다. 사람이 지나갈 틈이 없다.',
-      },
-      {
-        entityId: 'gm03_east_barricade',
-        code: 'GM-04',
-        label: '동쪽 길',
-        direction: '동',
-        lockedHint: '목재 바리케이드와 곡물 자루가 길을 막고 있다. 수리 중이라는 듯 망치 소리만 들려온다.',
-      },
+    exits: [
+      { entityId: 'gm03_south', to: 'market', arrive: { x: 6, y: 1 }, direction: '남' },
+      { entityId: 'gm03_north_gap', to: 'gm07_street', arrive: { x: 3, y: 5 }, direction: '북' },
+      { entityId: 'gm03_west_pile', to: 'gm05_alley', arrive: { x: 5, y: 3 }, direction: '서' },
+      { entityId: 'gm03_east_barricade', to: 'gm04_shops', arrive: { x: 1, y: 3 }, direction: '동' },
     ],
     playerStart: { x: 4, y: 6 },
   },
@@ -211,6 +196,7 @@ export const LOCATIONS: Record<string, LocationDef> = {
   },
   ...MOONLESS_LOCATIONS,
   ...SHELL_LOCATIONS,
+  ...GM_SHELL_LOCATIONS,
 };
 
 // ── 아이템 정의 ────────────────────────────────────────────────

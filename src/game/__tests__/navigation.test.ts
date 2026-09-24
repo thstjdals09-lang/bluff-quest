@@ -149,45 +149,50 @@ describe('GM-03 중앙 장터 연결 (GM-P2-IMPL-A)', () => {
     expect(getExit('market', 'warehouse_door')!.requires).toEqual({ unlocked: 'warehouse' });
   });
 
-  it('막힌 미래 길은 이동 트리거가 없고 잠긴 이유만 보여준다', () => {
-    const ways = LOCATIONS.central_market.futureWays!;
-    expect(ways.map((w) => w.code).sort()).toEqual(['GM-04', 'GM-05', 'GM-07']);
-    for (const w of ways) {
-      const ent = LOCATIONS.central_market.entities.find((e) => e.id === w.entityId)!;
-      expect(ent.kind).not.toBe('exit');
-      expect(getExit('central_market', w.entityId)).toBeUndefined();
-      const s = at(createInitialState(), 'central_market', 4, 4);
-      const tree = getInteraction(w.entityId, s);
-      expect(tree.nodes[tree.entry].text).toBe(w.lockedHint);
-      expect(tree.nodes[tree.entry].choices.every((c) => !c.effects)).toBe(true);
-      expect(reducer(s, { type: 'USE_EXIT', entityId: w.entityId })).toBe(s);
+  it('W0b: 중앙 장터의 북·서·동 좁은 틈은 GM-07·GM-05·GM-04로 가는 출구, 화물 수레는 치워지지 않은 조사 대상', () => {
+    const loc = LOCATIONS.central_market;
+    expect(loc.futureWays ?? []).toEqual([]);
+    const dest = { gm03_north_gap: 'gm07_street', gm03_west_pile: 'gm05_alley', gm03_east_barricade: 'gm04_shops' } as const;
+    for (const [id, to] of Object.entries(dest)) {
+      expect(loc.entities.find((e) => e.id === id)!.kind).toBe('exit');
+      expect(getExit('central_market', id)!.to).toBe(to);
     }
+    const cart = loc.entities.find((e) => e.id === 'gm03_north_cart')!;
+    expect(cart.kind).toBe('poi');
+    const s = at(createInitialState(), 'central_market', 4, 1);
+    const tree = getInteraction('gm03_north_cart', s);
+    expect(tree.nodes[tree.entry].text).toContain('좁은 틈');
+    expect(tree.nodes[tree.entry].text).toContain('못 치워');
+    expect(tree.nodes[tree.entry].choices.every((c) => !c.effects)).toBe(true);
+    expect(reducer(s, { type: 'USE_EXIT', entityId: 'gm03_north_cart' })).toBe(s);
   });
 
-  it('막힌 길 앞 장애물은 모두 걸어서 다가갈 수 있다 (인접한 빈 칸 존재)', () => {
+  it('틈 출구 세 곳 모두 걸어서 다가갈 수 있다 (인접한 빈 칸 존재)', () => {
     const loc = LOCATIONS.central_market;
     const free = (x: number, y: number) =>
       loc.layout[y]?.[x] === '.' && !loc.entities.some((e) => e.x === x && e.y === y);
-    for (const w of loc.futureWays!) {
-      const e = loc.entities.find((en) => en.id === w.entityId)!;
+    for (const id of ['gm03_north_gap', 'gm03_west_pile', 'gm03_east_barricade']) {
+      const e = loc.entities.find((en) => en.id === id)!;
       const around = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => free(e.x + dx, e.y + dy));
-      expect(around).toBe(true);
+      expect(around, id).toBe(true);
     }
   });
 
   it('검사기: 막힌 길이 출입구로 잘못 정의되면 잡아낸다', () => {
     const broken = structuredClone(LOCATIONS);
+    broken.central_market.futureWays = [{ entityId: 'gm03_north_cart', code: 'GM-07', label: '북쪽 길', direction: '북', lockedHint: '막힘' }];
     broken.central_market.entities.find((e) => e.id === 'gm03_north_cart')!.kind = 'exit';
     expect(validateLocationGraph(broken).some((p) => p.includes('gm03_north_cart'))).toBe(true);
   });
 
-  it('지역 지도: 중앙 장터를 방문하면 막힌 길이 표시되고 노드로 늘어나지 않는다', () => {
+  it('지역 지도: 중앙 장터를 방문하면 이웃 장소(GM-04·05·07)가 노드로 보이고 막힌 길 표시는 없다', () => {
     let s = at(createInitialState(), 'market', 6, 1);
     s = reducer(s, { type: 'USE_EXIT', entityId: 'central_market_passage' });
     const map = buildRegionMap('goblin_market', s);
-    expect(map.nodes.map((n) => n.locationId)).toContain('central_market');
-    expect(map.stubs.map((w) => w.label).sort()).toEqual(['동쪽 길', '북쪽 길', '서쪽 골목']);
-    expect(map.nodes).toHaveLength(4);
+    const ids = map.nodes.map((n) => n.locationId);
+    for (const id of ['central_market', 'gm04_shops', 'gm05_alley', 'gm07_street']) expect(ids).toContain(id);
+    expect(ids).not.toContain('gm06_storeroom'); // 아직 모르는 곳은 드러내지 않는다
+    expect(map.stubs).toEqual([]);
   });
 
   it('저장 위치가 막힌 칸이면 로드 시 시작 좌표로 보정된다', async () => {
