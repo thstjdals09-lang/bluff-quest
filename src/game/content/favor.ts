@@ -47,7 +47,7 @@ export function favorGrizzleChoices(state: GameState): DialogueChoice[] {
   if (st === null && keyAvailable(state)) {
     return [
       {
-        text: '좌판이 왜 이리 허전해?',
+        text: '상자가 하나 빈 것 같은데?',
         next: 'gf_offer',
         effects: [
           { type: 'SET_FLAG', key: 'gf_stage', value: 'offered' },
@@ -75,17 +75,17 @@ export function favorGrizzleChoices(state: GameState): DialogueChoice[] {
 }
 
 export function favorGrizzleNodes(state: GameState): DialogueNode[] {
-  const bluffLine = state.flags.gf_method === 'bluff' ? '\n\n"근데 짐꾼들이 내가 따지러 온다고 겁먹었다던데? 크크, 내 이름값 좀 했네."' : '';
+  const bluffLine = state.flags.gf_method === 'bluff' ? '\n\n"근데 짐꾼들이 내가 따지러 온다고 벌벌 떨었다며? ...내 이름 판 값은 나중에 받을 거야."' : '';
   const returnText =
     state.flags.gf_key_given === true
-      ? '"내 상자! 흠집 하나 없네." 그리즐이 상자를 끌어안더니, 경품 상자에서 녹슨 열쇠 하나를 꺼내 던진다. "약속한 경품이야. 어디 쓰는 건지는 나도 몰라. ...이 시장에서 자물쇠 달린 문이라면 창고 하나뿐이지만."'
-      : '"내 상자! 흠집 하나 없네." 그리즐이 상자를 끌어안는다. "경품? 열쇠는 이미 가져갔잖아, 욕심쟁이. ...대신 이 일은 기억해 두지."';
+      ? '"그걸 정말 찾아왔군." 그리즐이 상자를 받아 뚜껑을 열자, 바닥에서 녹슨 열쇠 하나가 굴러 나온다.\n\n"...흥, 약속은 약속이지. 상자 안에서 나온 건데, 네가 가져. 난 이런 거 넣은 기억 없어."'
+      : '"그걸 정말 찾아왔군." 그리즐이 상자를 받아 든다.\n\n"열쇠는 전에 챙겨 갔잖아. ...그래도 상자를 돌려준 건 기억해 두지."';
   return [
     {
       id: 'gf_offer',
       speaker: '그리즐',
-      text: '"...눈썰미 있네." 그리즐이 좌판 옆 빈자리를 흘끔 본다. "칠까지 해 둔 내 예비 경품 상자가 없어졌어. 아침에 짐꾼 놈들이 수레에 실어 간 게 틀림없어! 중앙 장터 북쪽에 서 있는 그 수레 말이야." 그리즐이 턱을 괸다. "찾아다 주면 경품 하나 줄게. 대결 없이, 공짜로."',
-      choices: [{ text: '알아보겠다고 한다' }],
+      text: '"상자가 하나 비었네, 하고? ...잘도 봤군." 그리즐이 좌판 옆 빈자리를 못마땅하게 노려본다.\n\n"짐꾼들이 내 물건까지 싣고 갔어. 중앙 장터에 수레 세워 둔 그놈들 말이야. 찾아오면 빈손으로 돌려보내진 않지."',
+      choices: [{ text: '찾아보지' }],
     },
     { id: 'gf_return', speaker: '그리즐', text: returnText + bluffLine, choices: [{ text: '고개를 끄덕인다' }] },
   ];
@@ -141,7 +141,7 @@ export function favorCartInteraction(state: GameState, label: string, lockedHint
   const choices: DialogueChoice[] = [];
   if (!seenCart) {
     choices.push({
-      text: '짐 사이의 칠한 상자를 살펴본다',
+      text: '칠한 상자를 살펴본다',
       next: 'gf_box',
       effects: [
         { type: 'SET_FLAG', key: 'gf_seen_cart', value: true },
@@ -150,9 +150,9 @@ export function favorCartInteraction(state: GameState, label: string, lockedHint
     });
   }
   if (seenCart && seenStall) {
-    choices.push({ text: '짐꾼에게 낙인과 좌판의 먼지 자국을 짚어 보인다', next: 'gf_got_evidence', effects: got('evidence') });
+    choices.push({ text: '좌판 상자와 같은 이빨 자국을 짚어 보인다', next: 'gf_got_evidence', effects: got('evidence') });
   }
-  const bluffText = '짐꾼을 떠본다: "그리즐이 직접 따지러 온다더라"';
+  const bluffText = '그리즐이 직접 따지러 온다고 떠본다';
   if (bluffOnCooldown(state)) {
     choices.push({ text: bluffText, next: 'gf_cooldown' });
   } else if (seenStall) {
@@ -175,31 +175,31 @@ export function favorCartInteraction(state: GameState, label: string, lockedHint
     gf_box: {
       id: 'gf_box',
       speaker: label,
-      text: `${CART_FACT}\n\n수레 뒤에서 짐꾼이 소리친다. "거기 손대지 마! 수레에 실린 건 다 우리 짐이야."`,
-      choices: [{ text: '다시 수레 쪽을 본다', next: 'root' }, { text: '물러난다' }],
+      text: `${CART_FACT}\n\n짐꾼이 수레 뒤에서 고개를 내민다. "수레에 오른 건 우리 짐이야. 남의 장사에 끼어들지 마."`,
+      choices: [{ text: '짐꾼 쪽으로 돌아선다', next: 'root' }, { text: '물러난다' }],
     },
     gf_got_evidence: {
       id: 'gf_got_evidence',
       speaker: '짐꾼',
-      text: '"...낙인이 똑같네. 그 자국 크기도 딱 이 상자만 하고." 짐꾼이 머리를 긁적인다. "아침에 좌판 옆에 굴러다니길래 버린 건 줄 알았지. 가져가, 가져가."',
+      text: '"좌판에 남은 상자들과 이 상자에 같은 이빨 자국이 있어. 빈자리 크기도 딱 이만하고. 주인한테 확인해 보자."\n\n짐꾼이 낙인을 들여다보다 혀를 찬다. "...그 표시까지 봤다고? 가져가. 대신 내가 내줬다는 말은 하지 마."',
       choices: [{ text: '상자를 챙긴다' }],
     },
     gf_got_bluff: {
       id: 'gf_got_bluff',
       speaker: '짐꾼',
-      text: '"그 고블린이 직접? 좌판 옆에 네모난 자국까지 남았다고?" 짐꾼의 얼굴이 굳는다. "...귀찮은 건 질색이야. 가져가고, 우린 모르는 일로 해."',
+      text: '"그리즐 좌판 상자가 딱 하나 비더군. 전부 이빨 자국 낙인이고. 그 양반 성질 알지?"\n\n짐꾼이 입술을 씰룩인다. "...상자 수까지 세고 왔어? 에이, 귀찮게 됐네. 가져가. 우린 모르는 일이야."',
       choices: [{ text: '상자를 챙긴다' }],
     },
     gf_refused: {
       id: 'gf_refused',
       speaker: '짐꾼',
-      text: '"그리즐? 그 고블린이 뭘 잃어버렸는지나 알고 하는 소리야?" 짐꾼이 코웃음 친다. 그리즐 좌판 사정을 모르니 말이 먹히지 않는다.\n\n(다른 장소에 다녀온 뒤 다시 떠볼 수 있다.)',
+      text: '"그리즐이 온다고? 그 양반이 직접 와서 말하라 그래. 수레에 오른 건 우리 짐이야."\n\n짐꾼은 등을 돌려 짐 끈을 조인다. 지금은 더 말해 봐야 소용없다.',
       choices: [{ text: '물러난다' }],
     },
     gf_cooldown: {
       id: 'gf_cooldown',
       speaker: '짐꾼',
-      text: '"방금 그 소리 또 하려고? 딴 데 갔다 와."\n\n(장소를 한 번 옮긴 뒤 다시 떠볼 수 있다.)',
+      text: '"또 그 소리야? 바쁘니까 나중에 와."\n\n(다른 곳에 다녀온 뒤 다시 말을 걸어 보자.)',
       choices: [{ text: '물러난다' }],
     },
   };
@@ -213,11 +213,11 @@ export function favorRecords(state: GameState): { kind: RecordKind; text: string
   if (st === null) return [];
   const f = state.flags;
   const out: { kind: RecordKind; text: string }[] = [
-    { kind: 'claim', text: '그리즐: "짐꾼 놈들이 내 칠한 예비 경품 상자를 수레에 실어 갔어."' },
+    { kind: 'claim', text: '그리즐: "짐꾼들이 내 물건까지 싣고 갔어." — 칠한 경품 상자 하나가 없어졌다고 한다.' },
   ];
   if (f.gf_seen_stall === true) out.push({ kind: 'fact', text: STALL_FACT });
   if (f.gf_seen_cart === true) out.push({ kind: 'fact', text: CART_FACT });
-  if (f.gf_heard_porter === true) out.push({ kind: 'claim', text: '짐꾼: "수레에 실린 건 다 우리 짐이야."' });
+  if (f.gf_heard_porter === true) out.push({ kind: 'claim', text: '짐꾼: "수레에 오른 건 우리 짐이야."' });
   if (f.gf_seen_stall === true && f.gf_seen_cart === true) {
     out.push({ kind: 'inference', text: '수레의 낙인 상자는 그리즐 좌판에서 빠진 그 상자로 보인다. 같은 낙인, 같은 크기의 자국.' });
   }
@@ -228,8 +228,8 @@ export function favorRecords(state: GameState): { kind: RecordKind; text: string
   if (st === 'returned') {
     out.push({ kind: 'fact', text: '칠한 상자를 그리즐에게 돌려줬다.' });
     if (f.gf_key_given === true) {
-      out.push({ kind: 'fact', text: '그리즐이 경품 상자에서 낡은 열쇠를 꺼내 줬다.' });
-      out.push({ kind: 'claim', text: '그리즐: "어디 쓰는 건지는 나도 몰라."' });
+      out.push({ kind: 'fact', text: '돌려준 상자 바닥에서 낡은 열쇠가 나왔고, 그리즐이 가지라며 건넸다.' });
+      out.push({ kind: 'claim', text: '그리즐: "난 이런 거 넣은 기억 없어."' });
     }
   }
   return out;

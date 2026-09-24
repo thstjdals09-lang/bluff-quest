@@ -282,6 +282,12 @@ function goblinDialogue(state: GameState): DialogueTree {
         },
       },
     };
+  } else if (f.gf_stage === 'returned') {
+    // 부탁 경로를 거친 손님: 대결 승자와는 다른 사회적 반응 (마지못한 신뢰)
+    base = tree('그리즐', '"오, 상자 찾아 준 손님이군." 그리즐이 상자를 탁탁 두드린다. "경품은 줄 만큼 줬어. 더 가져가고 싶으면 이번엔 승부로 가져가 보든가."', [
+      { text: '대결한다', startEncounter: true },
+      { text: '아직이다' },
+    ]);
   } else {
     base = tree('그리즐', '"또 왔네. 상자는 언제나 준비돼 있어. 도전할 배짱이 생겼나?"', [
       { text: '대결한다', startEncounter: true },

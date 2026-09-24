@@ -37,7 +37,7 @@ function choose(s: GameState, entityId: string, textIncludes: string, node = 'ro
   return { s: out, next: c.next ? getInteraction(entityId, out).nodes[c.next]?.text : undefined };
 }
 
-const offer = (s: GameState) => choose(at(s, 'market'), 'goblin', '허전해').s;
+const offer = (s: GameState) => choose(at(s, 'market'), 'goblin', '빈 것 같은데').s;
 const seeStall = (s: GameState) => choose(at(s, 'market'), 'crates', '기억해 둔다').s;
 const seeCart = (s: GameState) => choose(at(s, 'central_market'), 'gm03_north_cart', '칠한 상자를 살펴본다').s;
 const giveBack = (s: GameState) => choose(at(s, 'market'), 'goblin', '돌려준다');
@@ -60,7 +60,7 @@ describe('GM-P3 그리즐의 부탁 (열쇠의 대결 외 경로)', () => {
     s = travel(s);
     s = importSave(JSON.stringify(s))!;
     expect(s.flags.gf_stage).toBeUndefined();
-    expect(choices(at(s, 'market'), 'goblin').join()).toContain('허전해');
+    expect(choices(at(s, 'market'), 'goblin').join()).toContain('빈 것 같은데');
   });
 
   for (const order of ['stall-first', 'cart-first'] as const) {
@@ -81,19 +81,19 @@ describe('GM-P3 그리즐의 부탁 (열쇠의 대결 외 경로)', () => {
     let s = at(offer(base()), 'central_market');
     const r = choose(s, 'gm03_north_cart', '떠본다');
     s = r.s;
-    expect(r.next).toContain('말이 먹히지 않는다');
+    expect(r.next).toContain('직접 와서 말하라');
     expect(s.flags.gf_refused_at).toBe(Number(s.flags.travel_count ?? 0));
     // 같은 이동 횟수: 대기 안내만, 상태 변화 없음
     const again = choose(s, 'gm03_north_cart', '떠본다');
-    expect(again.next).toContain('딴 데 갔다 와');
+    expect(again.next).toContain('나중에 와');
     expect(again.s.flags).toEqual(s.flags);
     // 새로고침으로는 풀리지 않는다
     s = importSave(JSON.stringify(s))!;
-    expect(choose(s, 'gm03_north_cart', '떠본다').next).toContain('딴 데 갔다 와');
+    expect(choose(s, 'gm03_north_cart', '떠본다').next).toContain('나중에 와');
     // 이동 후 재시도: 아직 좌판 사실이 없으니 같은 거절 논리
     s = travel(s);
     const r2 = choose(s, 'gm03_north_cart', '떠본다');
-    expect(r2.next).toContain('말이 먹히지 않는다');
+    expect(r2.next).toContain('직접 와서 말하라');
     s = r2.s;
     expect(s.flags.gf_refused_at).toBe(Number(s.flags.travel_count));
     // 좌판 사실 확보 + 이동 → 떠보기 성공
@@ -126,6 +126,7 @@ describe('GM-P3 그리즐의 부탁 (열쇠의 대결 외 경로)', () => {
     expect(s.flags.key_route).toBe('favor');
     expect(s.quests.q_invitation.stage).toBe('find_lock');
     expect(choices(at(s, 'market'), 'goblin').join()).not.toContain('돌려준다'); // 반납은 한 번뿐
+    expect(getInteraction('goblin', at(s, 'market')).nodes.root.text).toContain('상자 찾아 준 손님'); // 경로별 사회적 반응
     s = winDuel(s);
     expect(keyCount(s)).toBe(1);
     expect(s.flags.key_route).toBe('favor');
@@ -138,7 +139,7 @@ describe('GM-P3 그리즐의 부탁 (열쇠의 대결 외 경로)', () => {
     const s = winDuel(base());
     expect(keyCount(s)).toBe(1);
     expect(s.flags.key_route).toBe('duel');
-    expect(choices(at(s, 'market'), 'goblin').join()).not.toContain('허전해');
+    expect(choices(at(s, 'market'), 'goblin').join()).not.toContain('빈 것 같은데');
   });
 
   it('교차: 부탁 수락 → 대결로 열쇠 → 상자 반납은 이야기만 (열쇠·경로·퀘스트 불변)', () => {
@@ -149,7 +150,7 @@ describe('GM-P3 그리즐의 부탁 (열쇠의 대결 외 경로)', () => {
     s = choose(at(s, 'central_market'), 'gm03_north_cart', '짚어 보인다').s;
     const ret = giveBack(s);
     s = ret.s;
-    expect(ret.next).toContain('이미 가져갔잖아');
+    expect(ret.next).toContain('전에 챙겨 갔잖아');
     expect(keyCount(s)).toBe(1);
     expect(s.flags.key_route).toBe('duel');
     expect(s.flags.gf_key_given).toBeUndefined();
