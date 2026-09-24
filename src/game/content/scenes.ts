@@ -14,6 +14,8 @@ import portBg from '../../assets/port-docks-bg.jpg';
 import finStand from '../../assets/fin-stand.png';
 import roadBg from '../../assets/market-road-bg.jpg';
 import gateMerchantCart from '../../assets/gate-merchant-cart.png';
+import centralMarketBg from '../../assets/central-market-bg.jpg';
+import alleyMouth from '../../assets/alley-mouth.png';
 import playerFront from '../../assets/player-front.png';
 import playerBack from '../../assets/player-back.png';
 import playerLeft from '../../assets/player-left.png';
@@ -119,6 +121,25 @@ export const SCENES: Record<string, SceneDef> = {
       { entityId: 'goblin', sprite: goblinStall, height: 24, offsetX: -3, nameplate: true },
       { entityId: 'mira', sprite: miraStall, height: 22, offsetX: 3, nameplate: true },
       { entityId: 'crates', sprite: cratesSprite, height: 15 },
+      { entityId: 'central_market_passage', sprite: alleyMouth, height: 22, offsetX: 5, offsetY: 2 },
+    ],
+  },
+  central_market: {
+    locationId: 'central_market',
+    bg: centralMarketBg,
+    aspect: '2 / 3',
+    bgAspect: 1376 / 2039,
+    cameraZoom: 1.5,
+    projection: {
+      top: { left: 5, right: 95, y: 12 },
+      bottom: { left: 2, right: 98, y: 100 },
+      scaleTop: 0.72,
+      scaleBottom: 1.0,
+    },
+    playerHeight: 16,
+    objects: [
+      // 북쪽 수레·동쪽 바리케이드는 배경에 그려져 있다. 서쪽 입구는 배경에 막힘이 없어 짐 더미를 둔다.
+      { entityId: 'gm03_west_pile', sprite: cratesSprite, height: 15, offsetX: -3 },
     ],
   },
   warehouse: {

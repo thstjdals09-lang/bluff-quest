@@ -42,7 +42,7 @@ export const LOCATIONS: Record<string, LocationDef> = {
     name: '입구 장터',
     regionId: 'goblin_market',
     code: 'GM-02',
-    arrivalNote: '그리즐의 상자 좌판과 미라의 약초 좌판, 시장 게시판이 눈에 띈다.',
+    arrivalNote: '그리즐의 상자 좌판과 미라의 약초 좌판, 시장 게시판이 눈에 띈다. 오른쪽 기둥 옆으로 좁은 골목이 나 있다.',
     layout: [
       '#######', // 0: 북쪽 성벽 (창고 문)
       '.......', // 1
@@ -62,6 +62,7 @@ export const LOCATIONS: Record<string, LocationDef> = {
       { id: 'crates', kind: 'poi', x: 3, y: 6, icon: '📦', name: '부서진 상자 더미' },
       { id: 'mira', kind: 'npc', x: 6, y: 6, icon: '🧙', name: '약초상 미라' },
       { id: 'market_exit', kind: 'exit', x: 3, y: 9, icon: '🛤️', name: '남쪽 출구' },
+      { id: 'central_market_passage', kind: 'exit', x: 6, y: 0, icon: '🏮', name: '기둥 옆 골목' },
     ],
     exits: [
       {
@@ -73,8 +74,58 @@ export const LOCATIONS: Record<string, LocationDef> = {
         lockedHint: '녹슨 자물쇠가 걸려 있다.',
       },
       { entityId: 'market_exit', to: 'market_road', arrive: { x: 2, y: 2 }, direction: '남' },
+      { entityId: 'central_market_passage', to: 'central_market', arrive: { x: 4, y: 7 }, direction: '북' },
     ],
     playerStart: { x: 2, y: 6 },
+  },
+  central_market: {
+    id: 'central_market',
+    name: '중앙 장터',
+    regionId: 'goblin_market',
+    code: 'GM-03',
+    arrivalNote: '좌판 두 개가 마주 보는 광장. 길이 사방으로 뻗어 있지만 지금은 남쪽만 열려 있다.',
+    layout: [
+      '##.#.####', // 0: 북쪽 길 — 화물 수레가 막고 있음 (4,0)
+      '##......#', // 1
+      '.##...##.', // 2: 서쪽 길 (0,2) 짐 더미 / 동쪽 길 (8,2) 목재 바리케이드, 좌우 가운데 좌판
+      '.##...##.', // 3
+      '.........', // 4
+      '##.....##', // 5
+      '###...###', // 6 (시작 지점)
+      '###...###', // 7
+      '###...###', // 8: 남쪽 — 입구 장터로 가는 골목 (4,8)
+    ],
+    entities: [
+      { id: 'gm03_south', kind: 'exit', x: 4, y: 8, icon: '🏮', name: '입구 장터 쪽 골목' },
+      { id: 'gm03_north_cart', kind: 'poi', x: 4, y: 0, icon: '🛒', name: '길을 막은 화물 수레' },
+      { id: 'gm03_west_pile', kind: 'poi', x: 0, y: 2, icon: '📦', name: '쌓아 둔 짐 더미' },
+      { id: 'gm03_east_barricade', kind: 'poi', x: 8, y: 2, icon: '🚧', name: '목재 바리케이드' },
+    ],
+    exits: [{ entityId: 'gm03_south', to: 'market', arrive: { x: 6, y: 1 }, direction: '남' }],
+    futureWays: [
+      {
+        entityId: 'gm03_north_cart',
+        code: 'GM-07',
+        label: '북쪽 길',
+        direction: '북',
+        lockedHint: '짐을 가득 실은 화물 수레가 길을 통째로 막고 있다. 짐꾼들은 "오늘은 못 치워!"라며 손을 내젓는다.',
+      },
+      {
+        entityId: 'gm03_west_pile',
+        code: 'GM-05',
+        label: '서쪽 골목',
+        direction: '서',
+        lockedHint: '통과 짐 상자가 골목 입구에 산처럼 쌓여 있다. 사람이 지나갈 틈이 없다.',
+      },
+      {
+        entityId: 'gm03_east_barricade',
+        code: 'GM-04',
+        label: '동쪽 길',
+        direction: '동',
+        lockedHint: '목재 바리케이드와 곡물 자루가 길을 막고 있다. 수리 중이라는 듯 망치 소리만 들려온다.',
+      },
+    ],
+    playerStart: { x: 4, y: 6 },
   },
   warehouse: {
     id: 'warehouse',

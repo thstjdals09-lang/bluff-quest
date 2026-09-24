@@ -79,13 +79,20 @@ export function App(props: { initialState: GameState; onExitToTitle: () => void 
 
   const location = LOCATIONS[state.player.location] ?? LOCATIONS.market;
 
+  // 인접한 대상이 여럿이면 바라보는 방향의 대상을 우선한다
   const adjacentEntity: MapEntity | null = useMemo(() => {
+    const [fx, fy] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[facing];
+    const faced = location.entities.find(
+      (e) => e.x === state.player.x + fx && e.y === state.player.y + fy,
+    );
     return (
+      faced ??
       location.entities.find(
         (e) => Math.abs(e.x - state.player.x) + Math.abs(e.y - state.player.y) === 1,
-      ) ?? null
+      ) ??
+      null
     );
-  }, [location, state.player.x, state.player.y]);
+  }, [location, state.player.x, state.player.y, facing]);
 
   const encounterActive = state.activeEncounter !== null;
   const exploreActive =

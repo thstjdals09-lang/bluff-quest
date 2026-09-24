@@ -144,6 +144,19 @@ export function validateSave(data: unknown): data is GameState {
   );
 }
 
+/** 저장된 위치가 이동 불가 칸이면(장소 레이아웃 변경 등) 해당 장소 시작 좌표로 보정한다. */
+export function normalizePosition(state: GameState): GameState {
+  const loc = LOCATIONS[state.player.location];
+  if (!loc) {
+    const fallback = LOCATIONS.market;
+    return { ...state, player: { ...state.player, location: fallback.id, ...fallback.playerStart } };
+  }
+  const { x, y } = state.player;
+  const row = loc.layout[y];
+  const free = row !== undefined && row[x] === '.' && !loc.entities.some((e) => e.x === x && e.y === y);
+  return free ? state : { ...state, player: { ...state.player, ...loc.playerStart } };
+}
+
 export function saveGame(state: GameState): boolean {
   try {
     localStorage.setItem(saveKey(), JSON.stringify(state));
@@ -167,7 +180,7 @@ export function loadGame(): { state: GameState; loadedFromSave: boolean } {
       logEvent('error', '세이브 데이터가 손상되어 백업 후 새 게임을 시작합니다.');
       return { state: createInitialState(), loadedFromSave: false };
     }
-    return { state: parsed, loadedFromSave: true };
+    return { state: normalizePosition(parsed), loadedFromSave: true };
   } catch (e) {
     logEvent('error', `세이브 로드 실패: ${String(e)} — 새 게임을 시작합니다.`);
     try {

@@ -1,4 +1,4 @@
-import type { ExitDef, GameState, LocationDef } from '../types';
+import type { ExitDef, FutureWayDef, GameState, LocationDef } from '../types';
 import { LOCATIONS } from './world';
 
 /**
@@ -8,6 +8,10 @@ import { LOCATIONS } from './world';
 
 export function getExit(locationId: string, entityId: string): ExitDef | undefined {
   return LOCATIONS[locationId]?.exits.find((e) => e.entityId === entityId);
+}
+
+export function getFutureWay(locationId: string, entityId: string): FutureWayDef | undefined {
+  return LOCATIONS[locationId]?.futureWays?.find((w) => w.entityId === entityId);
 }
 
 export function isExitOpen(exit: ExitDef, state: GameState): boolean {
@@ -55,7 +59,8 @@ export function locationsInRegion(regionId: string): LocationDef[] {
 export const REGION_MAP_POS: Record<string, { x: number; y: number }> = {
   market_road: { x: 50, y: 84 },
   market: { x: 50, y: 50 },
-  warehouse: { x: 50, y: 16 },
+  warehouse: { x: 38, y: 16 },
+  central_market: { x: 74, y: 20 },
   port_docks: { x: 50, y: 50 },
 };
 
@@ -82,7 +87,12 @@ export interface RegionMapEdge {
 export function buildRegionMap(
   regionId: string,
   state: GameState,
-): { nodes: RegionMapNode[]; edges: RegionMapEdge[]; outbound: { from: string; label: string }[] } {
+): {
+  nodes: RegionMapNode[];
+  edges: RegionMapEdge[];
+  outbound: { from: string; label: string }[];
+  stubs: { from: string; label: string; direction: string }[];
+} {
   const members = locationsInRegion(regionId);
   const visited = new Set(state.visitedLocations);
   const known = new Set<string>();
@@ -120,7 +130,13 @@ export function buildRegionMap(
       edges.push({ from: loc.id, to: exit.to, locked });
     }
   }
-  return { nodes, edges, outbound };
+  // 막힌 길: 해당 장소를 방문했을 때만 표시 (열린 것처럼 보이지 않게 이름 대신 길 모습으로)
+  const stubs: { from: string; label: string; direction: string }[] = [];
+  for (const loc of members) {
+    if (!visited.has(loc.id)) continue;
+    for (const w of loc.futureWays ?? []) stubs.push({ from: loc.id, label: w.label, direction: w.direction });
+  }
+  return { nodes, edges, outbound, stubs };
 }
 
 // ── 그래프 검증 (테스트·개발자 툴에서 사용) ──
@@ -162,6 +178,15 @@ export function validateLocationGraph(locations: Record<string, LocationDef> = L
       }
       if (target.regionId === loc.regionId && !target.exits.some((x) => x.to === loc.id)) {
         problems.push(`${loc.id} → ${exit.to}: 같은 지역인데 되돌아오는 출입구가 없다`);
+      }
+    }
+    for (const way of loc.futureWays ?? []) {
+      const ent = loc.entities.find((e) => e.id === way.entityId);
+      if (!ent) problems.push(`${loc.id}: 막힌 길 '${way.entityId}'에 해당하는 장애물 엔티티가 없다`);
+      else if (ent.kind === 'exit') problems.push(`${loc.id}: 막힌 길 '${way.entityId}'가 이동 가능한 출입구로 정의되어 있다`);
+      if (!way.label || !way.lockedHint) problems.push(`${loc.id}: 막힌 길 '${way.entityId}'에 label/lockedHint가 없다`);
+      if (loc.exits.some((x) => x.entityId === way.entityId)) {
+        problems.push(`${loc.id}: '${way.entityId}'가 출입구와 막힌 길에 동시에 정의되어 있다`);
       }
     }
     if (!isFreeTile(loc, loc.playerStart.x, loc.playerStart.y)) {

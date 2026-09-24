@@ -69,7 +69,7 @@ describe('장소 연결 구조', () => {
     const s = createInitialState(); // 입구 장터만 방문
     const map = buildRegionMap('goblin_market', s);
     const ids = map.nodes.map((n) => n.locationId).sort();
-    expect(ids).toEqual(['market', 'market_road', 'warehouse']);
+    expect(ids).toEqual(['central_market', 'market', 'market_road', 'warehouse']);
     expect(map.nodes.find((n) => n.locationId === 'market')!.status).toBe('current');
     expect(map.nodes.find((n) => n.locationId === 'warehouse')!.status).toBe('known');
     expect(map.edges.find((e) => e.to === 'warehouse' || e.from === 'warehouse')!.locked).toBe(true);
@@ -113,5 +113,74 @@ describe('세이브 v6 (장소 방문 기록)', () => {
     delete v5.visitedLocations;
     const restored = importSave(JSON.stringify(v5))!;
     expect(restored.visitedLocations).toEqual(['market_road']);
+  });
+});
+
+describe('GM-03 중앙 장터 연결 (GM-P2-IMPL-A)', () => {
+  it('입구 장터 기둥 옆 골목 ↔ 중앙 장터 왕복이 된다', () => {
+    let s = at(createInitialState(), 'market', 6, 1);
+    s = reducer(s, { type: 'USE_EXIT', entityId: 'central_market_passage' });
+    expect(s.player.location).toBe('central_market');
+    expect(s.player).toMatchObject({ x: 4, y: 7 });
+    expect(s.visitedLocations).toContain('central_market');
+    s = at(s, 'central_market', 4, 7);
+    s = reducer(s, { type: 'USE_EXIT', entityId: 'gm03_south' });
+    expect(s.player.location).toBe('market');
+    expect(s.player).toMatchObject({ x: 6, y: 1 });
+  });
+
+  it('창고 문 (3,0)은 그대로 잠긴 출입구로 남는다', () => {
+    const door = LOCATIONS.market.entities.find((e) => e.id === 'warehouse_door')!;
+    expect(door).toMatchObject({ x: 3, y: 0, kind: 'exit' });
+    expect(getExit('market', 'warehouse_door')!.requires).toEqual({ unlocked: 'warehouse' });
+  });
+
+  it('막힌 미래 길은 이동 트리거가 없고 잠긴 이유만 보여준다', () => {
+    const ways = LOCATIONS.central_market.futureWays!;
+    expect(ways.map((w) => w.code).sort()).toEqual(['GM-04', 'GM-05', 'GM-07']);
+    for (const w of ways) {
+      const ent = LOCATIONS.central_market.entities.find((e) => e.id === w.entityId)!;
+      expect(ent.kind).not.toBe('exit');
+      expect(getExit('central_market', w.entityId)).toBeUndefined();
+      const s = at(createInitialState(), 'central_market', 4, 4);
+      const tree = getInteraction(w.entityId, s);
+      expect(tree.nodes[tree.entry].text).toBe(w.lockedHint);
+      expect(tree.nodes[tree.entry].choices.every((c) => !c.effects)).toBe(true);
+      expect(reducer(s, { type: 'USE_EXIT', entityId: w.entityId })).toBe(s);
+    }
+  });
+
+  it('막힌 길 앞 장애물은 모두 걸어서 다가갈 수 있다 (인접한 빈 칸 존재)', () => {
+    const loc = LOCATIONS.central_market;
+    const free = (x: number, y: number) =>
+      loc.layout[y]?.[x] === '.' && !loc.entities.some((e) => e.x === x && e.y === y);
+    for (const w of loc.futureWays!) {
+      const e = loc.entities.find((en) => en.id === w.entityId)!;
+      const around = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => free(e.x + dx, e.y + dy));
+      expect(around).toBe(true);
+    }
+  });
+
+  it('검사기: 막힌 길이 출입구로 잘못 정의되면 잡아낸다', () => {
+    const broken = structuredClone(LOCATIONS);
+    broken.central_market.entities.find((e) => e.id === 'gm03_north_cart')!.kind = 'exit';
+    expect(validateLocationGraph(broken).some((p) => p.includes('gm03_north_cart'))).toBe(true);
+  });
+
+  it('지역 지도: 중앙 장터를 방문하면 막힌 길이 표시되고 노드로 늘어나지 않는다', () => {
+    let s = at(createInitialState(), 'market', 6, 1);
+    s = reducer(s, { type: 'USE_EXIT', entityId: 'central_market_passage' });
+    const map = buildRegionMap('goblin_market', s);
+    expect(map.nodes.map((n) => n.locationId)).toContain('central_market');
+    expect(map.stubs.map((w) => w.label).sort()).toEqual(['동쪽 길', '북쪽 길', '서쪽 골목']);
+    expect(map.nodes).toHaveLength(4);
+  });
+
+  it('저장 위치가 막힌 칸이면 로드 시 시작 좌표로 보정된다', async () => {
+    const { normalizePosition } = await import('../save');
+    const s = at(createInitialState(), 'central_market', 0, 0);
+    expect(normalizePosition(s).player).toMatchObject(LOCATIONS.central_market.playerStart);
+    const ok = at(createInitialState(), 'market', 6, 1);
+    expect(normalizePosition(ok)).toBe(ok);
   });
 });

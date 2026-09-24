@@ -1,5 +1,5 @@
 import type { DialogueChoice, DialogueNode, ExitDef, GameState } from '../types';
-import { exitDestinationLabel, getExit, isExitOpen } from './navigation';
+import { exitDestinationLabel, getExit, getFutureWay, isExitOpen } from './navigation';
 
 export interface DialogueTree {
   entry: string;
@@ -32,6 +32,8 @@ export function getInteraction(entityId: string, state: GameState): DialogueTree
   // 출입구: 이야기가 걸린 문은 전용 대화, 나머지는 공통 출입구 대화
   const exit = getExit(state.player.location, entityId);
   if (exit && !hasExitStoryHook(entityId, state)) return exitTree(state, exit);
+  const way = getFutureWay(state.player.location, entityId);
+  if (way) return tree(way.label, way.lockedHint, [{ text: '물러난다' }]);
   switch (entityId) {
     case 'old_card':
       return oldCardInteraction(state);

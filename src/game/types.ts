@@ -140,6 +140,22 @@ export interface ExitDef {
   lockedHint?: string;
 }
 
+/**
+ * 아직 구현되지 않은 곳으로 이어지는 길 — 배경에 보이지만 장애물로 막혀 있다.
+ * 이동 트리거가 없고 목적지 id도 없다. 상호작용하면 막힌 이유만 보여준다.
+ */
+export interface FutureWayDef {
+  /** 막힌 길 앞 장애물 엔티티 id (kind: 'poi') */
+  entityId: string;
+  /** 기획서 장소 코드 (예: GM-07) — 개발 추적용 */
+  code: string;
+  /** 플레이어에게 보이는 방향 이름 (목적지 이름 대신 길 모습으로) */
+  label: string;
+  direction: '북' | '남' | '동' | '서';
+  /** 막혀 있는 이유 (세계 안의 사정) */
+  lockedHint: string;
+}
+
 export interface LocationDef {
   id: string;
   name: string;
@@ -153,6 +169,8 @@ export interface LocationDef {
   layout: string[];
   entities: MapEntity[];
   exits: ExitDef[];
+  /** 막힌 미래 길 (선택) */
+  futureWays?: FutureWayDef[];
   playerStart: { x: number; y: number };
 }
 

@@ -231,7 +231,7 @@ function RegionDetail(props: {
 
 /** 지역 내부 지도 — 장소 연결 데이터에서 자동 생성. 아는 장소만 표시한다. */
 function RegionMap(props: { state: GameState; regionId: string }) {
-  const { nodes, edges, outbound } = buildRegionMap(props.regionId, props.state);
+  const { nodes, edges, outbound, stubs } = buildRegionMap(props.regionId, props.state);
   const pos = (id: string) => nodes.find((n) => n.locationId === id)?.pos ?? { x: 50, y: 50 };
   return (
     <>
@@ -283,6 +283,16 @@ function RegionMap(props: { state: GameState; regionId: string }) {
           );
         })}
       </div>
+      {stubs.length > 0 && (
+        <div className="card">
+          <b>막혀 있는 길</b>
+          {stubs.map((w) => (
+            <p key={w.from + w.label} className="dim">
+              · {nodes.find((n) => n.locationId === w.from)?.name}: {w.label} (지금은 지나갈 수 없다)
+            </p>
+          ))}
+        </div>
+      )}
       {outbound.length > 0 && (
         <div className="card">
           <b>다른 지역으로 이어지는 길</b>
