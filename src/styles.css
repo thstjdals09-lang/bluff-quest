@@ -1276,3 +1276,24 @@ button.active { border-color: var(--gold); color: var(--gold-bright); }
   white-space: nowrap;
   text-align: center;
 }
+
+/* 가로·낮은 화면: 열기 확인 창이 상자 세 개를 모두 덮어 다른 상자로 바로 바꿀 수 없었다 →
+   말풍선과 상자 사이의 빈 띠로 올리고 한 줄로 줄인다 (세로 화면은 기존 위치 유지) */
+@media (max-height: 520px) and (orientation: landscape) {
+  .enc-confirm {
+    top: calc(env(safe-area-inset-top) + 64px);
+    bottom: auto;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(600px, calc(100% - 20px));
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  .enc-confirm > span { flex: 1; }
+  .enc-confirm-buttons { flex: 0 0 auto; }
+  .enc-confirm-buttons button { padding: 6px 14px; white-space: nowrap; }
+}
