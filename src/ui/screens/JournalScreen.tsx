@@ -6,6 +6,50 @@ import { RECORD_KIND_LABELS, getDiscoveredRecords } from '../../game/content/rec
 import type { RecordKind } from '../../game/content/records';
 import { getNotebook } from '../../game/content/incidents';
 import type { IncidentView } from '../../game/content/incidents';
+import { getRecap, recapAvailable } from '../../game/content/recap';
+
+/** '지금까지' 요약 — 밤의 부두 이정표 이후 일지에서 언제든 다시 펼칠 수 있는 읽기 전용 카드 */
+function RecapCard(props: { state: GameState }) {
+  const [open, setOpen] = useState(false);
+  const recap = getRecap(props.state);
+  return (
+    <div className="card recap">
+      <div className="content-row">
+        <b>📖 지금까지의 이야기</b>
+        <button className="recap-toggle" onClick={() => setOpen((v) => !v)}>
+          {open ? '접기' : '펼쳐 보기'}
+        </button>
+      </div>
+      {open && (
+        <div className="recap-body">
+          <p className="recap-h">지나온 길</p>
+          {recap.path.map((p) => (
+            <p key={p.name} className="recap-line">
+              {p.done ? '✓' : '◉'} <b>{p.name}</b> — {p.stageTitle}
+            </p>
+          ))}
+          {recap.incidents.length > 0 && <p className="recap-h">시장의 사건 (내 판단)</p>}
+          {recap.incidents.map((i) => (
+            <div key={i.name} className="recap-incident">
+              <p className="recap-line">
+                <b>{i.name}</b> <span className={`chip ${i.status === 'active' ? 'warn' : 'ok'}`}>{i.status === 'active' ? '진행 중' : '해결'}</span>
+              </p>
+              <p className="dim recap-counts">{KIND_ORDER.map((k) => `${RECORD_KIND_LABELS[k]} ${i.counts[k]}`).join(' · ')}</p>
+              {i.judgements.map((t) => (
+                <RecordLine key={t} kind="inference" text={t} />
+              ))}
+            </div>
+          ))}
+          {recap.unconfirmed.length > 0 && <p className="recap-h">들었지만 확인하지 못한 이야기</p>}
+          {recap.unconfirmed.map((r) => (
+            <RecordLine key={r.text} kind={r.kind} text={r.text} />
+          ))}
+          <p className="dim recap-foot">직접 확인한 사실 {recap.factCount}개 — 나머지는 아직 누군가의 말이다.</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const TYPE_LABELS: Record<QuestType, { name: string; desc: string }> = {
   main: { name: '메인 퀘스트', desc: '세계 전체에 걸친 주요 스토리.' },
@@ -72,6 +116,7 @@ export function JournalScreen(props: { state: GameState; trackedQuestId?: string
     <div className="screen">
       <h2 className="screen-title">📜 모험 일지</h2>
       <p className="screen-sub">지금까지의 사건과 실마리.</p>
+      {recapAvailable(state) && <RecapCard state={state} />}
 
       <div className="card">
         <b>🔎 수집한 정보 ({records.length})</b>

@@ -1327,3 +1327,12 @@ button.active { border-color: var(--gold); color: var(--gold-bright); }
 }
 .hud-quest-row { display: flex; gap: 4px; align-items: stretch; }
 .hud-quest-row .hud-quest-pill { min-width: 0; }
+
+/* ── GM-P7 '지금까지' 요약 ── */
+.recap .content-row { border-top: none; padding: 0; }
+.recap-toggle { padding: 6px 12px; font-size: 12px; }
+.recap-h { margin: 12px 0 4px; font-size: 12px; color: var(--gold); letter-spacing: 0.04em; }
+.recap-line { margin: 3px 0; font-size: 13px; line-height: 1.5; }
+.recap-incident { margin: 6px 0 8px; }
+.recap-counts { margin: 0 0 4px; font-size: 12px; }
+.recap-foot { margin-top: 10px; font-size: 12px; }

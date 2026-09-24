@@ -33,8 +33,20 @@ export const LOCATIONS: Record<string, LocationDef> = {
       { id: 'market_gate', kind: 'exit', x: 2, y: 0, icon: '🏮', name: '고블린 시장 입구' },
       { id: 'gate_merchant', kind: 'npc', x: 4, y: 1, icon: '🛒', name: '입구의 상인' },
       { id: 'old_card', kind: 'poi', x: 1, y: 4, icon: '✨', name: '길가의 반짝이는 것' },
+      { id: 'coast_road', kind: 'exit', x: 2, y: 7, icon: '🌊', name: '해안길' },
     ],
-    exits: [{ entityId: 'market_gate', to: 'market', arrive: { x: 2, y: 7 }, direction: '북' }],
+    exits: [
+      { entityId: 'market_gate', to: 'market', arrive: { x: 2, y: 7 }, direction: '북' },
+      {
+        // 걸어온 흙길을 되돌아가면 해안길 — 월드맵 항구 이동과 같은 조건(초대장 발견)으로만 열린다
+        entityId: 'coast_road',
+        to: 'port_docks',
+        arrive: { x: 3, y: 1 },
+        direction: '남',
+        requires: { flag: 'found_invitation' },
+        lockedHint: '걸어온 길을 되돌아가면 해안길이다. 지금은 시장에 볼일이 남아 있다.',
+      },
+    ],
     playerStart: { x: 2, y: 6 },
   },
   market: {
@@ -305,7 +317,7 @@ export const QUESTS: Record<string, QuestDef> = {
       { id: 'arrive', title: '항구 도착', objective: '사기꾼들의 항구, 밤의 부두에 도착했다. 초대장에 대해 아는 자를 찾아보자.' },
       { id: 'informant', title: '정보상', objective: '부두의 정보상 올드 핀이 무언가 아는 눈치다. 단, 저쪽도 이쪽을 떠보고 있다.' },
       { id: 'wager', title: '정보의 값', objective: '핀과의 거래 — 무엇을 걸고, 무엇을 숨길지는 내가 정한다.' },
-      { id: 'done', title: '자리의 주인', objective: '초대장은 이름이 아니라 \'자리\'를 잇는다. 밤의 부두 비밀 경기가 다음 목적지다. (다음 이야기는 추후 개발)' },
+      { id: 'done', title: '자리의 주인', objective: '초대장은 이름이 아니라 \'자리\'를 잇는다. 밤의 부두 비밀 경기가 다음 목적지다. 달 없는 밤을 기다리자.' },
     ],
   },
 };
