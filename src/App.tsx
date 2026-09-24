@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import type { GameAction, GameState, MapEntity } from './game/types';
+import type { GameAction, GameState, ItemDef, MapEntity } from './game/types';
 import { reducer } from './game/state';
 import { saveGame } from './game/save';
 import { LOCATIONS, getActiveTrackable, getTrackedQuest } from './game/content/world';
@@ -12,6 +12,7 @@ import { DialogueScene } from './ui/DialogueScene';
 import { EncounterView } from './ui/EncounterView';
 import { EventScene } from './ui/EventScene';
 import { ExploreHUD } from './ui/ExploreHUD';
+import { BagPanel } from './ui/BagPanel';
 import { TouchControls } from './ui/TouchControls';
 import { DevPanel } from './ui/DevPanel';
 import { GlobalNav } from './ui/GlobalNav';
@@ -31,6 +32,19 @@ export function isDevMode(): boolean {
   return import.meta.env.DEV || new URLSearchParams(window.location.search).has('dev');
 }
 
+/** 개발자 모드 화면 검수용: ?dev&bagfixture=N — 가방에 표시만 되는 긴 이름·설명 아이템 N개 (세이브에 들어가지 않음) */
+function devBagFixture(): ItemDef[] {
+  if (!isDevMode()) return [];
+  const n = Math.min(40, Number(new URLSearchParams(window.location.search).get('bagfixture')) || 0);
+  const icons = ['🧤', '🪙', '📜', '🎲', '🕯️', '🧿'];
+  return Array.from({ length: n }, (_, i) => ({
+    id: `fixture_${i + 1}`,
+    name: i % 3 === 0 ? `이름이 아주 길게 붙은 검은 비단 장갑 한 켤레 제${i + 1}호` : `검수용 물건 ${i + 1}`,
+    icon: icons[i % icons.length],
+    desc: '화면 검수용 표시 전용 물건. '.repeat(i % 3 === 0 ? 9 : 2).trim(),
+  }));
+}
+
 /** 로그인한 계정의 게임 세션. 타이틀(Root)에서 초기 상태를 받아 시작한다. */
 export function App(props: { initialState: GameState; onExitToTitle: () => void }) {
   const [state, dispatch] = useReducer(reducer, props.initialState);
@@ -46,6 +60,14 @@ export function App(props: { initialState: GameState; onExitToTitle: () => void 
   const [facing, setFacing] = useState<Facing>('down');
   const [moving, setMoving] = useState(false);
   const [hasMoved, setHasMoved] = useState(false);
+  // 가방(GameSheet) — 열린 동안 탐험 입력을 멈춘다. UI 상태일 뿐 세이브에 쓰지 않는다
+  const [bagOpen, setBagOpen] = useState(false);
+  const [bagPulse, setBagPulse] = useState(0);
+  const bagFixture = useMemo(devBagFixture, []);
+  const closeBag = useCallback(() => {
+    setBagOpen(false);
+    setBagPulse((n) => n + 1);
+  }, []);
   const stateRef = useRef(state);
   stateRef.current = state;
   const moveTimer = useRef<number | undefined>(undefined);
@@ -96,13 +118,15 @@ export function App(props: { initialState: GameState; onExitToTitle: () => void 
 
   const encounterActive = state.activeEncounter !== null;
   const exploreActive =
-    screen === 'explore' && !encounterActive && dialogue === null && eventId === null;
+    screen === 'explore' && !encounterActive && dialogue === null && eventId === null && !bagOpen;
 
   // 현재 화면 모드 (개발자 툴 표시용)
   const uiMode =
     screen !== 'explore'
       ? `system:${screen}`
-      : encounterActive
+      : bagOpen
+        ? 'menu:bag'
+        : encounterActive
         ? 'encounter'
         : eventId
           ? 'event'
@@ -121,6 +145,14 @@ export function App(props: { initialState: GameState; onExitToTitle: () => void 
     prevVisited.current = state.visitedLocations;
     setFadeKey((k) => k + 1);
   }, [state.player.location]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 장소 전환 페이드(0.45s) 동안에는 메뉴를 열지 않는다 — 렌더 시점에 바로 판단(효과를 기다리지 않음)
+  const [settledLocation, setSettledLocation] = useState(state.player.location);
+  const transitioning = settledLocation !== state.player.location;
+  useEffect(() => {
+    if (!transitioning) return;
+    const t = window.setTimeout(() => setSettledLocation(state.player.location), 450);
+    return () => window.clearTimeout(t);
+  }, [transitioning, state.player.location]);
   const bannerVisible = arrivalBanner !== null && arrivalBanner === state.player.location;
   useEffect(() => {
     if (!bannerVisible || dialogue || eventId || state.activeEncounter) return;
@@ -250,10 +282,24 @@ export function App(props: { initialState: GameState; onExitToTitle: () => void 
               barks={barks}
             />
           </div>
-          <ExploreHUD state={state} onNavigate={setScreen} hideMap={inPrologue} trackedQuestId={trackPref} onCycleTrack={cycleTrack} />
+          <ExploreHUD
+            state={state}
+            onNavigate={setScreen}
+            hideMap={inPrologue}
+            trackedQuestId={trackPref}
+            onCycleTrack={cycleTrack}
+            onOpenBag={() => {
+              if (exploreActive && !transitioning) setBagOpen(true);
+            }}
+            bagDisabled={!exploreActive || transitioning}
+            bagPulse={bagPulse}
+          />
           {tutorialHint && <div className="tutorial-hint">{tutorialHint}</div>}
           {bannerVisible && exploreActive && !tutorialHint && (
             <ArrivalBanner locationId={location.id} />
+          )}
+          {bagOpen && (
+            <BagPanel state={state} place={locationLabel(location.id)} onClose={closeBag} extraItems={bagFixture} />
           )}
           {exploreActive && (
             <TouchControls

@@ -85,8 +85,14 @@ export function getDiscoveredRecords(state: GameState): { kind: RecordKind; text
   return getScopedRecords(state).map(({ kind, text }) => ({ kind, text }));
 }
 
-function staticRecords(state: GameState): { kind: RecordKind; text: string }[] {
+/** 이 세이브가 실제로 얻은 이야기 기록 중 주어진 플래그의 것만 (가방의 '관련 기록' 등) */
+export function storyRecordsForFlags(state: GameState, flags: readonly string[]): { kind: RecordKind; text: string }[] {
+  return staticRecords(state, flags);
+}
+
+function staticRecords(state: GameState, only?: readonly string[]): { kind: RecordKind; text: string }[] {
   return STORY_RECORDS.filter((r) => {
+    if (only && !only.includes(r.flag)) return false;
     const v = state.flags[r.flag];
     if (v === undefined || v === false) return false;
     if (r.requireValue !== undefined) return v === r.requireValue;
