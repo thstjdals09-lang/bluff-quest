@@ -1196,3 +1196,13 @@ button.active { border-color: var(--gold); color: var(--gold-bright); }
 .dev-log p { margin: 2px 0; font-family: monospace; font-size: 12px; }
 .log-error { color: #ff8a80; }
 .dev-encounter ul { margin: 4px 0; padding-left: 18px; }
+
+/* 가로·낮은 화면: 첫 방문 배너가 캐릭터를 가리지 않도록 상단 HUD 사이로 올린다 */
+@media (max-height: 520px) {
+  .arrival-banner {
+    top: calc(env(safe-area-inset-top) + 40px);
+    max-width: 58%;
+    padding: 6px 14px;
+  }
+  .arrival-note { margin-top: 2px; }
+}
