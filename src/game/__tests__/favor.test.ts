@@ -170,6 +170,13 @@ describe('GM-P3 그리즐의 부탁 (열쇠의 대결 외 경로)', () => {
     expect(s.flags.gf_stage).toBe('returned');
   });
 
+  it('창고가 열린 근거(unlocked·초대장)만 있는 구버전 세이브에서는 부탁이 새로 시작되지 않는다', () => {
+    const s1 = { ...base(), unlocked: ['warehouse'] };
+    const s2 = { ...base(), flags: { ...base().flags, found_invitation: true } };
+    expect(choices(at(s1, 'market'), 'goblin').join()).not.toContain('빈 것 같은데');
+    expect(choices(at(s2, 'market'), 'goblin').join()).not.toContain('빈 것 같은데');
+  });
+
   it('초대장 이후의 그리즐 대화에도 반납 선택지가 붙는다', () => {
     let s = seeCart(seeStall(offer(base())));
     s = choose(at(s, 'central_market'), 'gm03_north_cart', '짚어 보인다').s;

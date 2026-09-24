@@ -36,7 +36,13 @@ export function bluffOnCooldown(state: GameState): boolean {
 
 /** 이 시점에 상자를 돌려주면 열쇠가 나가는가 */
 function keyAvailable(state: GameState): boolean {
-  return !state.inventory.includes('old_key') && state.flags.warehouse_opened !== true;
+  // 창고가 이미 열렸다는 근거가 하나라도 있으면 열쇠는 더 이상 필요 없다 (구버전 세이브의 flag 누락 대비)
+  return (
+    !state.inventory.includes('old_key') &&
+    state.flags.warehouse_opened !== true &&
+    !state.unlocked.includes('warehouse') &&
+    state.flags.found_invitation !== true
+  );
 }
 
 // ── 그리즐 ──
