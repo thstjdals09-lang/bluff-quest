@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import type { GameAction, GameState, MapEntity } from './game/types';
 import { reducer } from './game/state';
 import { saveGame } from './game/save';
-import { LOCATIONS } from './game/content/world';
+import { LOCATIONS, getActiveTrackable, getTrackedQuest } from './game/content/world';
 import { canPassExitDirectly, getInteraction } from './game/content/dialogues';
 import { exitDestinationLabel, getExit, locationLabel } from './game/content/navigation';
 import type { DialogueTree } from './game/content/dialogues';
@@ -194,6 +194,15 @@ export function App(props: { initialState: GameState; onExitToTitle: () => void 
     state.quests.q_prologue !== undefined &&
     state.quests.q_prologue.stage !== 'done';
 
+  // 추적할 사건 선택 — UI 상태일 뿐 세이브·퀘스트·이벤트에 쓰지 않는다 (새로고침하면 기본 우선순위로)
+  const [trackPref, setTrackPref] = useState<string | null>(null);
+  const cycleTrack = () => {
+    const active = getActiveTrackable(state);
+    if (active.length < 2) return;
+    const cur = getTrackedQuest(state, trackPref)?.quest.id;
+    setTrackPref(active[(active.indexOf(cur ?? '') + 1) % active.length]);
+  };
+
   // 주변 NPC의 호객·혼잣말 — 시장이 플레이어 없이도 살아 있다는 느낌
   const barks = useMemo(() => {
     const b: Record<string, string> = {};
@@ -241,7 +250,7 @@ export function App(props: { initialState: GameState; onExitToTitle: () => void 
               barks={barks}
             />
           </div>
-          <ExploreHUD state={state} onNavigate={setScreen} hideMap={inPrologue} />
+          <ExploreHUD state={state} onNavigate={setScreen} hideMap={inPrologue} trackedQuestId={trackPref} onCycleTrack={cycleTrack} />
           {tutorialHint && <div className="tutorial-hint">{tutorialHint}</div>}
           {bannerVisible && exploreActive && !tutorialHint && (
             <ArrivalBanner locationId={location.id} />
@@ -262,7 +271,7 @@ export function App(props: { initialState: GameState; onExitToTitle: () => void 
           {screen === 'worldmap' && (
             <WorldMapScreen state={state} dispatch={dispatch} onExplore={() => setScreen('explore')} />
           )}
-          {screen === 'journal' && <JournalScreen state={state} />}
+          {screen === 'journal' && <JournalScreen state={state} trackedQuestId={trackPref} onTrack={setTrackPref} />}
           {screen === 'profile' && <ProfileScreen state={state} />}
           {screen === 'career' && <CareerScreen state={state} />}
           {screen === 'npcs' && <NpcScreen state={state} />}

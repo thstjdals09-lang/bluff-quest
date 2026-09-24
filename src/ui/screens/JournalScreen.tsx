@@ -1,7 +1,11 @@
+import { useState } from 'react';
 import type { GameState, QuestType } from '../../game/types';
-import { QUESTS } from '../../game/content/world';
+import { QUESTS, getTrackedQuest, isQuestFinished } from '../../game/content/world';
 import { getRegionById } from '../../game/content/regions';
 import { RECORD_KIND_LABELS, getDiscoveredRecords } from '../../game/content/records';
+import type { RecordKind } from '../../game/content/records';
+import { getNotebook } from '../../game/content/incidents';
+import type { IncidentView } from '../../game/content/incidents';
 
 const TYPE_LABELS: Record<QuestType, { name: string; desc: string }> = {
   main: { name: '메인 퀘스트', desc: '세계 전체에 걸친 주요 스토리.' },
@@ -14,11 +18,55 @@ const TYPE_LABELS: Record<QuestType, { name: string; desc: string }> = {
 
 const TYPE_ORDER: QuestType[] = ['main', 'character', 'regional', 'discovery', 'challenge', 'cross_region'];
 
-/** 퀘스트 일지 — 유형별 진행 상태 + 수집한 정보(사실/주장/소문/추정 구분). */
-export function JournalScreen(props: { state: GameState }) {
+const KIND_ORDER: RecordKind[] = ['fact', 'claim', 'rumor', 'inference'];
+
+function RecordLine(props: { kind: RecordKind; text: string }) {
+  return (
+    <p className="record-line">
+      <span className={`chip record-${props.kind}`}>{RECORD_KIND_LABELS[props.kind]}</span> {props.text}
+    </p>
+  );
+}
+
+/** 사건 수첩의 사건 한 장 — 상태·현재 실마리·종류별 개수, 해결된 사건은 접어 둔다 */
+function IncidentCard(props: { inc: IncidentView; tracked: boolean; onTrack?: (questId: string) => void }) {
+  const { inc } = props;
+  const active = inc.status === 'active';
+  return (
+    <div className={`incident ${active ? 'active' : 'resolved'}`} data-incident={inc.id}>
+      <div className="content-row">
+        <b>{inc.name}</b>
+        <span className={`chip ${active ? 'warn' : 'ok'}`}>{active ? '진행 중' : '해결'}</span>
+      </div>
+      {inc.lead && <p className="incident-lead">📍 {inc.lead}</p>}
+      <p className="dim incident-counts">
+        {KIND_ORDER.map((k) => `${RECORD_KIND_LABELS[k]} ${inc.counts[k]}`).join(' · ')}
+      </p>
+      {active && props.onTrack && (
+        <button className={`incident-track ${props.tracked ? 'on' : ''}`} onClick={() => props.onTrack!(inc.questId)} disabled={props.tracked}>
+          {props.tracked ? '📌 추적 중' : '📌 이 사건 추적'}
+        </button>
+      )}
+      {inc.records.length > 0 && (
+        <details open={active}>
+          <summary>기록 {inc.records.length}개</summary>
+          {inc.records.map((r) => (
+            <RecordLine key={r.order} kind={r.kind} text={r.text} />
+          ))}
+        </details>
+      )}
+    </div>
+  );
+}
+
+/** 퀘스트 일지 — 사건별 수첩(기본) / 시간순 기록 + 유형별 진행 상태. */
+export function JournalScreen(props: { state: GameState; trackedQuestId?: string | null; onTrack?: (questId: string) => void }) {
   const { state } = props;
   const allQuests = Object.values(QUESTS);
   const records = getDiscoveredRecords(state);
+  const notebook = getNotebook(state);
+  const [view, setView] = useState<'grouped' | 'chrono'>('grouped');
+  const trackedId = getTrackedQuest(state, props.trackedQuestId)?.quest.id ?? null;
 
   return (
     <div className="screen">
@@ -28,14 +76,40 @@ export function JournalScreen(props: { state: GameState }) {
       <div className="card">
         <b>🔎 수집한 정보 ({records.length})</b>
         <p className="dim">확인된 사실과 누군가의 주장은 다르다. 무엇을 믿을지는 당신의 몫이다.</p>
-        {records.length === 0 ? (
+        <div className="journal-toggle" role="tablist">
+          <button className={view === 'grouped' ? 'active' : ''} onClick={() => setView('grouped')}>
+            사건별
+          </button>
+          <button className={view === 'chrono' ? 'active' : ''} onClick={() => setView('chrono')}>
+            시간순
+          </button>
+        </div>
+        {records.length === 0 && notebook.incidents.length === 0 ? (
           <p className="dim empty-line">아직 기록된 정보가 없다. 세계를 조사해 보자.</p>
+        ) : view === 'chrono' ? (
+          <div className="journal-chrono">
+            {records.map((r, i) => (
+              <RecordLine key={i} kind={r.kind} text={r.text} />
+            ))}
+          </div>
         ) : (
-          records.map((r, i) => (
-            <p key={i} className="record-line">
-              <span className={`chip record-${r.kind}`}>{RECORD_KIND_LABELS[r.kind]}</span> {r.text}
-            </p>
-          ))
+          <div className="journal-grouped">
+            {notebook.incidents.map((inc) => (
+              <IncidentCard key={inc.id} inc={inc} tracked={trackedId === inc.questId} onTrack={props.onTrack} />
+            ))}
+            {notebook.general.length > 0 && (
+              <div className="incident general" data-incident="general">
+                <details open={notebook.incidents.every((i) => i.status !== 'active')}>
+                  <summary>
+                    <b>이야기·지역 기록</b> <span className="dim">({notebook.general.length})</span>
+                  </summary>
+                  {notebook.general.map((r) => (
+                    <RecordLine key={r.order} kind={r.kind} text={r.text} />
+                  ))}
+                </details>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -51,7 +125,7 @@ export function JournalScreen(props: { state: GameState }) {
               quests.map((q) => {
                 const progress = state.quests[q.id] ?? null;
                 const region = getRegionById(q.regionId);
-                const done = progress?.stage === 'done';
+                const done = !!progress && isQuestFinished(q.id, progress.stage);
                 return (
                   <div key={q.id} className="quest-entry">
                     <div className="content-row">
@@ -64,7 +138,7 @@ export function JournalScreen(props: { state: GameState }) {
                     {progress && (
                       <div className="stage-list">
                         {q.stages.map((s) => {
-                          const isPast = progress.completed.includes(s.id) || (done && s.id === 'done');
+                          const isPast = progress.completed.includes(s.id) || (done && s.id === progress.stage);
                           const isCurrent = !done && s.id === progress.stage;
                           return (
                             <div
@@ -72,7 +146,7 @@ export function JournalScreen(props: { state: GameState }) {
                               className={`stage-line ${isPast && !isCurrent ? 'past' : ''} ${isCurrent ? 'current' : ''}`}
                             >
                               {isCurrent ? '◉' : isPast ? '✓' : '○'} <b>{s.title}</b>
-                              {(isCurrent || (done && s.id === 'done')) && (
+                              {(isCurrent || (done && s.id === progress.stage)) && (
                                 <span className="dim"> — {s.objective}</span>
                               )}
                             </div>

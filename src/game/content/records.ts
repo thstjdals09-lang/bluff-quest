@@ -55,8 +55,31 @@ export const STORY_RECORDS: StoryRecordDef[] = [
   { flag: 'invitation_shown', kind: 'fact', text: '초대장을 올드 핀에게 보여줬다. 정보를 얻었지만, 부두에 소문이 돌기 시작했다.' },
 ];
 
+/** 기록이 속한 사건 (없으면 general — 이야기·지역 전반의 기록) */
+export type RecordScope = 'general' | 's01' | 'favor' | 'handbill';
+
+export interface ScopedRecord {
+  kind: RecordKind;
+  text: string;
+  scope: RecordScope;
+  /** 평면(시간순) 목록에서의 위치 */
+  order: number;
+}
+
+/** 사건 태그가 붙은 기록 — 평면으로 펼치면 getDiscoveredRecords와 순서·문구·종류가 같다 */
+export function getScopedRecords(state: GameState): ScopedRecord[] {
+  const tag = (scope: RecordScope) => (r: { kind: RecordKind; text: string }) => ({ ...r, scope });
+  const all = [
+    ...staticRecords(state).map(tag('general')),
+    ...s01Records(state).map(tag('s01')),
+    ...favorRecords(state).map(tag('favor')),
+    ...hbRecords(state).map(tag('handbill')),
+  ];
+  return all.map((r, order) => ({ ...r, order }));
+}
+
 export function getDiscoveredRecords(state: GameState): { kind: RecordKind; text: string }[] {
-  return [...staticRecords(state), ...s01Records(state), ...favorRecords(state), ...hbRecords(state)];
+  return getScopedRecords(state).map(({ kind, text }) => ({ kind, text }));
 }
 
 function staticRecords(state: GameState): { kind: RecordKind; text: string }[] {

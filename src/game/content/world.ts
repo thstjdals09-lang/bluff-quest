@@ -313,15 +313,38 @@ export const QUESTS: Record<string, QuestDef> = {
 /** HUD 퀘스트 트래커가 보여줄 현재 퀘스트 — 우선순위 순서로 미완료 퀘스트를 고른다. */
 const TRACK_ORDER = ['q_prologue', 'q_night_pier', 'q_invitation', 'q_grizzle_favor', 'q_s01', 'q_handbill', 'q_black_chip', 'q_mira_past'];
 
+/** 퀘스트가 끝난 단계인가 — 'done' 외에 사건형 퀘스트의 종결 단계도 포함한다 */
+const TERMINAL_STAGES: Record<string, string[]> = {
+  q_s01: ['resolved'],
+  q_grizzle_favor: ['returned'],
+  q_handbill: ['resolved'],
+};
+export function isQuestFinished(questId: string, stage: string): boolean {
+  return stage === 'done' || (TERMINAL_STAGES[questId] ?? []).includes(stage);
+}
+
+/** 트래커가 순환할 수 있는 진행 중 퀘스트 (우선순위 순) */
+export function getActiveTrackable(state: GameState): string[] {
+  return TRACK_ORDER.filter((id) => {
+    const p = state.quests[id];
+    return !!p && !isQuestFinished(id, p.stage) && !!QUESTS[id]?.stages.some((s) => s.id === p.stage);
+  });
+}
+
+/**
+ * HUD 트래커가 보여줄 퀘스트. preferredId가 진행 중이면 그것을, 아니면 우선순위 첫 번째를 고른다.
+ * 순수 함수 — 어떤 선택도 게임 상태를 바꾸지 않는다.
+ */
 export function getTrackedQuest(
   state: GameState,
+  preferredId?: string | null,
 ): { quest: QuestDef; stage: QuestStageDef } | null {
-  for (const id of TRACK_ORDER) {
-    const progress = state.quests[id];
-    if (!progress || progress.stage === 'done') continue;
-    const quest = QUESTS[id];
-    const stage = quest?.stages.find((s) => s.id === progress.stage);
-    if (quest && stage) return { quest, stage };
+  const active = getActiveTrackable(state);
+  const pick = preferredId && active.includes(preferredId) ? preferredId : active[0];
+  if (pick) {
+    const quest = QUESTS[pick];
+    const stage = quest.stages.find((s) => s.id === state.quests[pick].stage)!;
+    return { quest, stage };
   }
   // 전부 완료되었거나 미시작이면 마지막으로 완료한 메인 퀘스트의 done 단계를 보여준다
   for (const id of TRACK_ORDER) {
