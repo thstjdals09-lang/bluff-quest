@@ -28,7 +28,7 @@ function RecordLine(props: { kind: RecordKind; text: string }) {
   );
 }
 
-/** 사건 수첩의 사건 한 장 — 상태·현재 실마리·종류별 개수, 해결된 사건은 접어 둔다 */
+/** 사건 수첩의 사건 한 장 — 상태·현재 실마리·종류별 개수. 기록은 기본으로 펼쳐 두고 접을 수 있다 */
 function IncidentCard(props: { inc: IncidentView; tracked: boolean; onTrack?: (questId: string) => void }) {
   const { inc } = props;
   const active = inc.status === 'active';
@@ -48,7 +48,7 @@ function IncidentCard(props: { inc: IncidentView; tracked: boolean; onTrack?: (q
         </button>
       )}
       {inc.records.length > 0 && (
-        <details open={active}>
+        <details open>
           <summary>기록 {inc.records.length}개</summary>
           {inc.records.map((r) => (
             <RecordLine key={r.order} kind={r.kind} text={r.text} />
@@ -99,7 +99,7 @@ export function JournalScreen(props: { state: GameState; trackedQuestId?: string
             ))}
             {notebook.general.length > 0 && (
               <div className="incident general" data-incident="general">
-                <details open={notebook.incidents.every((i) => i.status !== 'active')}>
+                <details open>
                   <summary>
                     <b>이야기·지역 기록</b> <span className="dim">({notebook.general.length})</span>
                   </summary>
