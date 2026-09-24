@@ -94,6 +94,10 @@ function gotoLocation(state: GameState, locationId: string, x: number, y: number
       : [...state.visitedLocations, locationId],
     player: { ...state.player, location: locationId, x: safe.x, y: safe.y },
   };
+  // 입구 장터에서 미라의 카드 혼잣말을 한 번 들은 뒤 떠나면 다시 반복하지 않는다 (새로고침으로는 소모되지 않음)
+  if (state.player.location === 'market' && locationId !== 'market' && state.flags.prologue_card === true && state.flags.mira_card_bark_seen !== true) {
+    next = { ...next, flags: { ...next.flags, mira_card_bark_seen: true } };
+  }
   // 장소 이동 횟수 (보류한 사건의 경과 판정용 — 시계 시간이 아니라 이동으로 센다)
   next = { ...next, flags: { ...next.flags, travel_count: Number(next.flags.travel_count ?? 0) + 1 } };
   if (locationId === 'central_market') next = onEnterCentralMarket(next, state.encounterSeed);

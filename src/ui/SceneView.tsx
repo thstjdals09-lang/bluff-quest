@@ -95,6 +95,8 @@ export function SceneView(props: {
   });
 
   if (!scene) return null;
+  // 상호작용 대상 마커는 대상 앞에 선 플레이어 스프라이트에 가려지지 않도록 항상 플레이어보다 위에 그린다
+  const markerZ = (z: number) => Math.max(z, p.z) + 2;
   const dev = getDevView();
   const devEnabled = isDevMode();
 
@@ -150,8 +152,8 @@ export function SceneView(props: {
                   style={{
                     // 말풍선은 화면(카메라) 안쪽에 보이도록 가로 위치를 보정한다
                     left: `${((clamp((x / 100) * worldW + tx, 96, frame.w - 156) - tx) / worldW) * 100}%`,
-                    // 말풍선 아래 끝이 상단 HUD(약 150px)보다 아래에 오도록
-                    top: `${((Math.max(((y - h - 3) / 100) * worldH + ty, 150) - ty) / worldH) * 100}%`,
+                    // 말풍선 아래 끝이 상단 HUD(약 150px)보다 아래, 하단 내비(약 80px)보다 위에 오도록
+                    top: `${((clamp(((y - h - 3) / 100) * worldH + ty, 150, Math.max(150, frame.h - 80)) - ty) / worldH) * 100}%`,
                     zIndex: pt.z + 2,
                   }}
                 >
@@ -161,9 +163,10 @@ export function SceneView(props: {
               {highlighted && (
                 <div
                   className="interact-marker"
-                  style={{ left: `${x}%`, top: `${y - h - (obj.nameplate ? 3.5 : 0.5)}%`, zIndex: pt.z + 1 }}
+                  style={{ left: `${x}%`, top: `${y - h - (obj.nameplate ? 3.5 : 0.5)}%`, zIndex: markerZ(pt.z) }}
                 >
                   {props.exitLabel ? <span className="exit-tag">{props.exitLabel}</span> : '❗'}
+                  {!props.exitLabel && !obj.nameplate && pt.z < p.z && <span className="marker-name">{entity.name}</span>}
                 </div>
               )}
             </div>
@@ -176,8 +179,9 @@ export function SceneView(props: {
           .map((e) => {
             const pt = project(e.x, e.y);
             return props.highlightId === e.id ? (
-              <div key={e.id} className="interact-marker" style={{ left: `${pt.x}%`, top: `${pt.y - 5}%`, zIndex: pt.z + 1 }}>
+              <div key={e.id} className="interact-marker" style={{ left: `${pt.x}%`, top: `${pt.y - 5}%`, zIndex: markerZ(pt.z) }}>
                 {props.exitLabel ? <span className="exit-tag">{props.exitLabel}</span> : '❗'}
+                {!props.exitLabel && pt.z < p.z && <span className="marker-name">{e.name}</span>}
               </div>
             ) : null;
           })}

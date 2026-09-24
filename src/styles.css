@@ -1261,3 +1261,18 @@ button.active { border-color: var(--gold); color: var(--gold-bright); }
     border-top: 1px solid var(--gold-dim);
   }
 }
+
+/* 마주 본 상호작용 대상이 플레이어 뒤에 가려질 때만 대상 이름을 마커 옆에 붙인다 */
+.interact-marker .marker-name {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--gold-bright);
+  background: rgba(14, 9, 5, 0.85);
+  border: 1px solid var(--gold-dim);
+  border-radius: 8px;
+  padding: 1px 7px;
+  white-space: nowrap;
+  text-align: center;
+}

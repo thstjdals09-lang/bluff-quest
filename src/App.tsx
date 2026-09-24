@@ -203,11 +203,14 @@ export function App(props: { initialState: GameState; onExitToTitle: () => void 
     if (state.player.location === 'market' && !state.npcs.goblin) {
       b.goblin = '골라 골라~ 상자 셋에 보물 하나! 공짜 게임이라니까!';
     }
-    if (state.player.location === 'market' && !state.npcs.mira) {
+    if (state.player.location === 'market' && state.flags.prologue_card === true && state.flags.mira_card_bark_seen !== true) {
+      // 카드 미스터리의 맥을 입구 장터에서 한 번만 되살린다 (시장을 떠나면 mira_card_bark_seen)
+      b.mira = '그 카드, 여기선 넣어 두는 게 좋아.';
+    } else if (state.player.location === 'market' && !state.npcs.mira) {
       b.mira = '말린 약초 있어요~ 속 쓰린 패배자용도!';
     }
     return b;
-  }, [state.player.location, state.flags.gate_merchant_met, state.npcs]);
+  }, [state.player.location, state.flags.gate_merchant_met, state.flags.prologue_card, state.flags.mira_card_bark_seen, state.npcs]);
 
   // 행동에 맞춘 최소 조작 안내 (프롤로그 한정)
   let tutorialHint: string | null = null;
@@ -322,7 +325,7 @@ export function App(props: { initialState: GameState; onExitToTitle: () => void 
 
       {/* MODE D — 이벤트 장면 */}
       {eventId && (
-        <EventScene eventId={eventId} playerName={state.player.name} onClose={() => setEventId(null)} />
+        <EventScene eventId={eventId} playerName={state.player.name} flags={state.flags} onClose={() => setEventId(null)} />
       )}
 
       {isDevMode() && (

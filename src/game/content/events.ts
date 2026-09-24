@@ -10,6 +10,8 @@ export interface EventDef {
   /** 향후 고퀄리티 일러스트 연결용 (현재 미사용 가능) */
   image?: string;
   footnote?: string;
+  /** 플래그 조건부 본문 — 조건을 만족하는 첫 변형이 text를 대신한다 */
+  variants?: { flag: string; text: string }[];
 }
 
 export const EVENTS: Record<string, EventDef> = {
@@ -17,7 +19,7 @@ export const EVENTS: Record<string, EventDef> = {
     id: 'found_invitation',
     icon: '✉️',
     title: '수상한 초대장',
-    text: '"진짜 승부사만 오라.\n사기꾼들의 항구, 밤의 부두에서 — 비밀 경기가 열린다."\n\n먼지 쌓인 궤짝 속에서 밀랍 인장이 찍힌 초대장을 발견했다. 이 시장 너머, 더 큰 판이 기다리고 있다.',
+    text: '"진짜 승부사만 오라.\n사기꾼들의 항구, 밤의 부두에서 — 비밀 경기가 열린다."\n\n먼지 쌓인 궤짝 속에서 밀랍 인장이 찍힌 초대장을 발견했다. 이 시장 너머, 더 큰 판이 기다리고 있다.\n\n누가 이걸 빈 창고에 둔 걸까.',
     footnote: '월드맵에서 사기꾼들의 항구가 해금되었다.',
   },
   warehouse_opened: {
@@ -35,6 +37,13 @@ EVENTS.port_arrival = {
   title: '사기꾼들의 항구',
   text: '소금기 밴 바람, 삐걱대는 밧줄, 물 위에 흔들리는 등불.\n\n카드 문양 돛을 단 배들이 어둠 속에 정박해 있다. 여기서는 모든 거래에 이면이 있다고 했다.\n\n초대장이 가리킨 곳 — 밤의 부두다.',
   footnote: '새로운 지역에 도착했다. 메인 이야기가 이어진다.',
+  variants: [
+    {
+      // 그리즐의 항구 경고를 실제로 들은 경우에만, 무주체 소문 대신 그 말을 떠올린다
+      flag: 'heard_grizzle_port_warning',
+      text: '소금기 밴 바람, 삐걱대는 밧줄, 물 위에 흔들리는 등불.\n\n카드 문양 돛을 단 배들이 어둠 속에 정박해 있다. 그리즐이 그랬지 — 항구 놈들 판은 시장이랑 격이 다르다고.\n\n초대장이 가리킨 곳 — 밤의 부두다.',
+    },
+  ],
 };
 
 EVENTS.invitation_back = {
@@ -71,4 +80,10 @@ EVENTS.market_firstlook = {
 
 export function getEventById(id: string): EventDef | undefined {
   return EVENTS[id];
+}
+
+/** 이벤트 본문을 현재 플래그에 맞춰 고른다 (variants가 없으면 기본 text) */
+export function resolveEventText(ev: EventDef, flags: Record<string, unknown>): string {
+  const v = ev.variants?.find((x) => flags[x.flag] === true);
+  return v ? v.text : ev.text;
 }

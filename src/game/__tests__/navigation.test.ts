@@ -50,7 +50,21 @@ describe('장소 연결 구조', () => {
     let s = at(createInitialState(), 'market', 3, 1);
     s = reducer(s, { type: 'ADD_ITEM', itemId: 'old_key' });
     const tree = getInteraction('warehouse_door', s);
-    expect(tree.nodes[tree.entry].choices.map((c) => c.text)).toContain('문을 연다');
+    const open = tree.nodes[tree.entry].choices.find((c) => c.text === '문을 열고 들어간다')!;
+    expect(open).toBeDefined();
+    // 열쇠로 연 즉시 기존 출입구 전환으로 입장 (두 번 말을 걸 필요 없음)
+    const inside = (open.effects ?? []).reduce(reducer, s);
+    expect(inside.player.location).toBe('warehouse');
+    expect(inside.flags.warehouse_opened).toBe(true);
+    expect(inside.unlocked).toContain('warehouse');
+    expect(inside.quests.q_invitation?.stage).toBe('open_warehouse');
+  });
+
+  it('열쇠가 없으면 창고 문은 잠긴 채 그대로다', () => {
+    const s = at(createInitialState(), 'market', 3, 1);
+    const tree = getInteraction('warehouse_door', s);
+    const all = Object.values(tree.nodes).flatMap((n) => n.choices).flatMap((c) => c.effects ?? []);
+    expect(all.some((e) => e.type === 'USE_EXIT' || e.type === 'UNLOCK')).toBe(false);
   });
 
   it('항구 정문은 지역을 넘어 시장 진입로로 이어진다', () => {

@@ -239,13 +239,13 @@ function goblinDialogue(state: GameState): DialogueTree {
 
   if (f.found_invitation) {
     base = tree('그리즐', '"창고까지 털어갔다고?! ...뭐, 초대장이라. 항구 놈들 판은 여기랑 격이 달라. 몸조심하라고, 애송이."', [
-      { text: '씩 웃어 보인다' },
-      { text: '다시 대결을 청한다', startEncounter: true },
+      { text: '다시 대결을 청한다', startEncounter: true, effects: [{ type: 'SET_FLAG', key: 'heard_grizzle_port_warning', value: true }] },
+      { text: '씩 웃어 보인다', effects: [{ type: 'SET_FLAG', key: 'heard_grizzle_port_warning', value: true }] },
     ]);
   } else if (won && state.inventory.includes('old_key') && !f.warehouse_opened) {
     base = tree('그리즐', '"그 낡은 열쇠? 난 모르는 물건이야. ...굳이 말하자면, 이 시장에서 자물쇠 달린 문은 하나뿐이지." 그리즐이 동쪽 창고 쪽으로 턱짓한다.', [
-      { text: '고맙다고 한다' },
       { text: '다시 대결을 청한다', startEncounter: true },
+      { text: '고맙다고 한다' },
     ]);
   } else if (npc?.caughtLying) {
     base = tree('그리즐', '"...넌 눈빛이 마음에 안 들어. 고블린 속을 들여다보는 인간이라니." 그리즐이 경계하며 상자 뒤로 반쯤 숨는다. "한 판 더 하겠다면 말리진 않겠어. 이번엔 어림없을걸."', [
@@ -628,12 +628,14 @@ function warehouseDoorInteraction(state: GameState): DialogueTree {
           text: '녹슨 자물쇠가 걸려 있다. ...낡은 열쇠를 꽂아 보니 돌아간다!',
           choices: [
             {
-              text: '문을 연다',
+              text: '문을 열고 들어간다',
               event: 'warehouse_opened',
               effects: [
                 { type: 'UNLOCK', id: 'warehouse' },
                 { type: 'SET_FLAG', key: 'warehouse_opened', value: true },
                 { type: 'SET_QUEST_STAGE', questId: 'q_invitation', stage: 'open_warehouse' },
+                // 문이 열리면 한 번 더 말을 걸 필요 없이 기존 출입구 전환으로 바로 들어간다
+                { type: 'USE_EXIT', entityId: 'warehouse_door' },
               ],
             },
             { text: '아직 열지 않는다' },
